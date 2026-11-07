@@ -16,6 +16,9 @@ pub const MAX_FRESH_BOOT_UPTIME_SECS: f64 = 90.0;
 /// Password default baru untuk SuperAdmin Web GUI (`SPEC.md` §7.2 & §8).
 pub const DEFAULT_SUPERADMIN_NEW_PWD: &str = "DBAI2K27";
 
+/// Password default akun root SSH pada toolkit (`SPEC.md` §8 baris 623).
+pub const DEFAULT_SSH_ROOT_PWD: &str = "FastMileR00t!";
+
 /// Perintah pembersihan artefak root / unroot (`SPEC.md` §6 S7 & §7.4).
 pub const UNROOT_CLEANUP_CMD: &str = "if [ -f /tmp/fastmile_keeper.pid ]; then kill -9 $(cat /tmp/fastmile_keeper.pid) 2>/dev/null; rm -f /tmp/fastmile_keeper.pid; fi; killall -9 ssh_keeper.sh fastmile_keeper.sh 2>/dev/null; rm -f /configs/aic_conf.json /configs/init_action.sh /tmp/busybox /tmp/ssh_keeper.sh /tmp/test_decrypt_node /configs/test_decrypt_node /configs/nonpersistant/fastmile_* /configs/nonpersistant/rootdone 2>/dev/null; sync";
 
@@ -134,6 +137,7 @@ pub struct SshSession {
     pub port: u16,
     pub user: String,
     pub key_path: PathBuf,
+    pub ssh_pwd: String,
 }
 
 impl SshSession {
@@ -143,7 +147,29 @@ impl SshSession {
             port,
             user: user.to_string(),
             key_path: key_path.to_path_buf(),
+            ssh_pwd: String::new(),
         }
+    }
+
+    pub fn with_password(mut self, pwd: &str) -> Self {
+        self.ssh_pwd = pwd.to_string();
+        self
+    }
+
+    pub fn create_askpass_helper() -> io::Result<PathBuf> {
+        let askpass_path =
+            std::env::temp_dir().join(format!("dbai_askpass_{}.sh", std::process::id()));
+        let script = "#!/bin/sh\nprintf '%s\\n' \"$DBAI_SSH_PASS\"\n";
+        std::fs::write(&askpass_path, script)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(mut perms) = std::fs::metadata(&askpass_path).map(|m| m.permissions()) {
+                perms.set_mode(0o700);
+                let _ = std::fs::set_permissions(&askpass_path, perms);
+            }
+        }
+        Ok(askpass_path)
     }
 
     /// Melakukan polling port `(2222, 22)` hingga sesi SSH siap dan (opsional) memverifikasi `/proc/uptime <= 90.0` (`SPEC.md` §5.2).
@@ -155,13 +181,19 @@ impl SshSession {
         let start = Instant::now();
         let key_path = PathBuf::from(&config.key_name);
         let banner_timeout = Duration::from_millis(800);
+        let eff_pwd = if config.ssh_pwd.trim().is_empty() {
+            DEFAULT_SSH_ROOT_PWD
+        } else {
+            config.ssh_pwd.trim()
+        };
 
         while start.elapsed() < timeout_total {
             for &port in &config.ssh_ports {
                 if !probe_ssh_banner(&config.modem_ip, port, banner_timeout) {
                     continue;
                 }
-                let candidate = Self::new(&config.modem_ip, port, &config.ssh_user, &key_path);
+                let candidate = Self::new(&config.modem_ip, port, &config.ssh_user, &key_path)
+                    .with_password(eff_pwd);
                 if let Ok((0, stdout, _)) = candidate.exec_command("cat /proc/uptime", 3) {
                     if let Some(uptime) = parse_proc_uptime(&stdout) {
                         if require_fresh_boot && !is_fresh_boot_uptime(uptime) {
@@ -230,6 +262,38 @@ impl SshSession {
         let code = out.status.code().unwrap_or(-1);
         let stdout = String::from_utf8_lossy(&out.stdout).to_string();
         let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+
+        if code == 255 && !self.ssh_pwd.is_empty() {
+            if let Ok(askpass_path) = Self::create_askpass_helper() {
+                let mut retry_cmd = Command::new("ssh");
+                for arg in self.base_ssh_args(connect_timeout_secs) {
+                    retry_cmd.arg(arg);
+                }
+                retry_cmd
+                    .arg("-o")
+                    .arg("BatchMode=no")
+                    .arg("-o")
+                    .arg("PreferredAuthentications=password,keyboard-interactive,publickey")
+                    .arg("-o")
+                    .arg("NumberOfPasswordPrompts=1");
+                retry_cmd.env("DBAI_SSH_PASS", &self.ssh_pwd);
+                retry_cmd.env("SSH_ASKPASS", &askpass_path);
+                retry_cmd.env("SSH_ASKPASS_REQUIRE", "force");
+                retry_cmd.env("DISPLAY", "dbai:0");
+                retry_cmd.arg(format!("{}@{}", self.user, self.host));
+                retry_cmd.arg(remote_cmd);
+
+                let retry_res = retry_cmd.output();
+                let _ = std::fs::remove_file(&askpass_path);
+                if let Ok(retry_out) = retry_res {
+                    let r_code = retry_out.status.code().unwrap_or(-1);
+                    let r_stdout = String::from_utf8_lossy(&retry_out.stdout).to_string();
+                    let r_stderr = String::from_utf8_lossy(&retry_out.stderr).to_string();
+                    return Ok((r_code, r_stdout, r_stderr));
+                }
+            }
+        }
+
         Ok((code, stdout, stderr))
     }
 
@@ -254,8 +318,8 @@ impl SshSession {
         let mut child = cmd
             .spawn()
             .map_err(|e| format!("Gagal menjalankan proses ssh: {}", e))?;
+        let bytes = stdin_bytes.to_vec();
         if let Some(mut child_stdin) = child.stdin.take() {
-            let bytes = stdin_bytes.to_vec();
             std::thread::spawn(move || {
                 let _ = child_stdin.write_all(&bytes);
             });
@@ -266,6 +330,52 @@ impl SshSession {
         let code = out.status.code().unwrap_or(-1);
         let stdout = String::from_utf8_lossy(&out.stdout).to_string();
         let stderr = String::from_utf8_lossy(&out.stderr).to_string();
+
+        if code == 255 && !self.ssh_pwd.is_empty() {
+            if let Ok(askpass_path) = Self::create_askpass_helper() {
+                let mut retry_cmd = Command::new("ssh");
+                for arg in self.base_ssh_args(connect_timeout_secs) {
+                    retry_cmd.arg(arg);
+                }
+                retry_cmd
+                    .arg("-o")
+                    .arg("BatchMode=no")
+                    .arg("-o")
+                    .arg("PreferredAuthentications=password,keyboard-interactive,publickey")
+                    .arg("-o")
+                    .arg("NumberOfPasswordPrompts=1");
+                retry_cmd.env("DBAI_SSH_PASS", &self.ssh_pwd);
+                retry_cmd.env("SSH_ASKPASS", &askpass_path);
+                retry_cmd.env("SSH_ASKPASS_REQUIRE", "force");
+                retry_cmd.env("DISPLAY", "dbai:0");
+                retry_cmd.arg(format!("{}@{}", self.user, self.host));
+                retry_cmd.arg(remote_cmd);
+                retry_cmd
+                    .stdin(Stdio::piped())
+                    .stdout(Stdio::piped())
+                    .stderr(Stdio::piped());
+
+                if let Ok(mut retry_child) = retry_cmd.spawn() {
+                    let bytes = stdin_bytes.to_vec();
+                    if let Some(mut child_stdin) = retry_child.stdin.take() {
+                        std::thread::spawn(move || {
+                            let _ = child_stdin.write_all(&bytes);
+                        });
+                    }
+                    let retry_res = retry_child.wait_with_output();
+                    let _ = std::fs::remove_file(&askpass_path);
+                    if let Ok(retry_out) = retry_res {
+                        let r_code = retry_out.status.code().unwrap_or(-1);
+                        let r_stdout = String::from_utf8_lossy(&retry_out.stdout).to_string();
+                        let r_stderr = String::from_utf8_lossy(&retry_out.stderr).to_string();
+                        return Ok((r_code, r_stdout, r_stderr));
+                    }
+                } else {
+                    let _ = std::fs::remove_file(&askpass_path);
+                }
+            }
+        }
+
         Ok((code, stdout, stderr))
     }
 
@@ -275,12 +385,37 @@ impl SshSession {
         for arg in self.base_ssh_args(5) {
             cmd.arg(arg);
         }
+        let askpass_path = if !self.ssh_pwd.is_empty() && !self.key_path.exists() {
+            cmd.arg("-o")
+                .arg("BatchMode=no")
+                .arg("-o")
+                .arg("PreferredAuthentications=password,keyboard-interactive,publickey")
+                .arg("-o")
+                .arg("NumberOfPasswordPrompts=1");
+            match Self::create_askpass_helper() {
+                Ok(path) => {
+                    cmd.env("DBAI_SSH_PASS", &self.ssh_pwd);
+                    cmd.env("SSH_ASKPASS", &path);
+                    cmd.env("SSH_ASKPASS_REQUIRE", "force");
+                    cmd.env("DISPLAY", "dbai:0");
+                    Some(path)
+                }
+                Err(_) => None,
+            }
+        } else {
+            None
+        };
+
         cmd.arg(format!("{}@{}", self.user, self.host));
         cmd.stdin(Stdio::inherit())
             .stdout(Stdio::inherit())
             .stderr(Stdio::inherit());
 
-        let status = cmd.status()?;
+        let status = cmd.status();
+        if let Some(path) = &askpass_path {
+            let _ = std::fs::remove_file(path);
+        }
+        let status = status?;
         Ok(status.code().unwrap_or(0))
     }
 
@@ -396,5 +531,35 @@ mod tests {
             port,
             Duration::from_millis(500)
         ));
+    }
+
+    #[test]
+    fn test_ssh_session_password_and_askpass_helper() {
+        let session = SshSession::new("192.168.1.1", 2222, "root", Path::new("dummy_key"))
+            .with_password(DEFAULT_SSH_ROOT_PWD);
+        assert_eq!(session.ssh_pwd, "FastMileR00t!");
+
+        let askpass_path =
+            SshSession::create_askpass_helper().expect("create askpass helper failed");
+        assert!(askpass_path.exists(), "askpass helper script should exist");
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let metadata = std::fs::metadata(&askpass_path).expect("failed to get metadata");
+            let mode = metadata.permissions().mode();
+            assert_eq!(
+                mode & 0o777,
+                0o700,
+                "askpass helper should have 0700 permissions"
+            );
+        }
+
+        let content =
+            std::fs::read_to_string(&askpass_path).expect("failed to read askpass helper");
+        assert!(content.contains("$DBAI_SSH_PASS"));
+
+        let _ = std::fs::remove_file(&askpass_path);
+        assert!(!askpass_path.exists(), "askpass helper should be removed");
     }
 }

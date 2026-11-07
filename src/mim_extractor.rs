@@ -432,6 +432,30 @@ impl FactoryMIMExtractor {
 
         Ok((entries, report, saved_path))
     }
+
+    /// Menormalkan path input pengguna (menghapus tanda kutip pengapit dan mengonversi path drive Windows `C:\...` ke `/mnt/c/...` di Unix/WSL, `SPEC.md` §3.3 #50).
+    pub fn normalize_path(raw_path: &str) -> PathBuf {
+        let p = raw_path
+            .trim()
+            .trim_matches(|c| c == '"' || c == '\'')
+            .trim();
+        let bytes = p.as_bytes();
+        if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
+            #[cfg(unix)]
+            {
+                let drive = (bytes[0] as char).to_ascii_lowercase();
+                let rest = p[2..].replace('\\', "/");
+                let clean_rest = rest.trim_start_matches('/');
+                let wsl_cand = if clean_rest.is_empty() {
+                    format!("/mnt/{}", drive)
+                } else {
+                    format!("/mnt/{}/{}", drive, clean_rest)
+                };
+                return PathBuf::from(wsl_cand);
+            }
+        }
+        PathBuf::from(p)
+    }
 }
 
 #[cfg(test)]
@@ -513,5 +537,24 @@ mod tests {
         assert_eq!(path.file_name().unwrap(), "info_ALCLB1234567.txt");
         assert_eq!(fs::read_to_string(&path).unwrap(), report);
         let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_normalize_path_quotes_and_wsl_drive() {
+        assert_eq!(
+            FactoryMIMExtractor::normalize_path("  \"image_backup/Factory_MIM.img\" "),
+            PathBuf::from("image_backup/Factory_MIM.img")
+        );
+        #[cfg(unix)]
+        {
+            assert_eq!(
+                FactoryMIMExtractor::normalize_path(r#"'C:\Users\Public\Factory_MIM.img'"#),
+                PathBuf::from("/mnt/c/Users/Public/Factory_MIM.img")
+            );
+            assert_eq!(
+                FactoryMIMExtractor::normalize_path(r#"D:\"#),
+                PathBuf::from("/mnt/d")
+            );
+        }
     }
 }

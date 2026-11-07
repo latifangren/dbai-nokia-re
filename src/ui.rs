@@ -32,6 +32,14 @@ pub fn pad_ansi(text: &str, width: usize) -> String {
     format!("{}{}", text, " ".repeat(pad))
 }
 
+/// Menginisialisasi mode konsol terminal agar mendukung sekuens warna ANSI (`SPEC.md` §3.3 #2 `init_terminal`).
+pub fn init_terminal() {
+    #[cfg(windows)]
+    {
+        let _ = std::process::Command::new("cmd").args(["/c", ""]).status();
+    }
+    let _ = io::stdout().flush();
+}
 pub fn clear_screen() {
     print!("\x1b[2J\x1b[H");
     let _ = io::stdout().flush();
@@ -71,5 +79,10 @@ mod tests {
         assert_eq!(strip_ansi(&colored), "Halo");
         let padded = pad_ansi(&colored, 10);
         assert_eq!(strip_ansi(&padded).len(), 10);
+    }
+
+    #[test]
+    fn test_init_terminal() {
+        init_terminal();
     }
 }

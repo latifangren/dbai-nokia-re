@@ -18,7 +18,8 @@ use servers::{BackgroundServers, BUSYBOX_BYTES, TEST_DECRYPT_NODE_BYTES};
 use sniper::{wait_for_shutdown, SshSession, DEFAULT_CHECK_PORTS};
 use ssh_keys::SSHKeyManager;
 use ui::{
-    clear_screen, log_error, log_info, log_success, log_warn, pad_ansi, prompt_line, Colors,
+    clear_screen, init_terminal, log_error, log_info, log_success, log_warn, pad_ansi, prompt_line,
+    Colors,
 };
 use web_cgi::WebCgiClient;
 
@@ -31,6 +32,107 @@ pub struct DbaiNokiaApp {
 }
 
 impl DbaiNokiaApp {
+    /// Menjalankan wizard startup dan konfigurasi awal interaktif (`SPEC.md` §3.3 #54).
+    pub fn startup_wizard(&mut self) {
+        clear_screen();
+        let box_w = 76usize;
+        let div = "═".repeat(box_w);
+        println!("{}╔{}╗{}", Colors::CYAN, div, Colors::RESET);
+        let title = format!(
+            "  {}STARTUP WIZARD & KONFIGURASI AWAL{}",
+            Colors::BOLD,
+            Colors::RESET
+        );
+        println!(
+            "{}║{}{}{}║{}",
+            Colors::CYAN,
+            Colors::RESET,
+            pad_ansi(&title, box_w),
+            Colors::CYAN,
+            Colors::RESET
+        );
+        println!("{}╚{}╝{}", Colors::CYAN, div, Colors::RESET);
+
+        // Step 1: Prompt Modem IP
+        let modem_prompt = format!("[?] Masukkan IP Modem [Enter = {}]: ", self.config.modem_ip);
+        let modem_in = match prompt_line(&modem_prompt) {
+            Ok(s) => s.trim().to_string(),
+            Err(_) => return,
+        };
+        if modem_in == "0" || modem_in.eq_ignore_ascii_case("q") {
+            return;
+        }
+        if !modem_in.is_empty() {
+            self.config.modem_ip = modem_in;
+        }
+
+        // Step 2: Refresh PC LAN IP and check subnet
+        self.config.refresh_pc_ip();
+        if self.config.is_subnet_matched {
+            log_success(&format!(
+                "Adapter LAN PC terdeteksi satu subnet: {}",
+                self.config.pc_ip
+            ));
+        } else {
+            log_warn(&format!(
+                "IP PC ({}) berbeda subnet dengan Modem ({})!",
+                self.config.pc_ip, self.config.modem_ip
+            ));
+            let manual_prompt = format!(
+                "[?] Masukkan IP LAN PC manual [Enter = tetap gunakan {}]: ",
+                self.config.pc_ip
+            );
+            if let Ok(manual_in) = prompt_line(&manual_prompt) {
+                let manual_in = manual_in.trim();
+                if !manual_in.is_empty() {
+                    self.config.pc_ip = manual_in.to_string();
+                    let target_prefix = self
+                        .config
+                        .modem_ip
+                        .rsplit_once('.')
+                        .map(|(prefix, _)| format!("{}.", prefix))
+                        .unwrap_or_else(|| "192.168.1.".to_string());
+                    self.config.is_subnet_matched = self.config.pc_ip.starts_with(&target_prefix);
+                }
+            }
+        }
+
+        // Step 3: Web Admin password & login
+        let pwd_prompt = if self.config.web_pwd.is_empty() {
+            "[?] Masukkan Password Web Admin [Enter = lewati]: "
+        } else {
+            "[?] Tekan [Enter] untuk menggunakan Password Web Admin tersimpan (atau ketik baru / 's' lewati): "
+        };
+        if let Ok(pwd_in) = prompt_line(pwd_prompt) {
+            let pwd_in = pwd_in.trim();
+            if pwd_in.eq_ignore_ascii_case("s") {
+                // Lewati
+            } else if !pwd_in.is_empty() {
+                self.config.web_pwd = pwd_in.to_string();
+                let mut client = WebCgiClient::new(
+                    &self.config.modem_ip,
+                    &self.config.web_user,
+                    &self.config.web_pwd,
+                );
+                match client.login() {
+                    Ok(_) => {
+                        log_success("Login Web CGI berhasil.");
+                        self.config.is_web_authenticated = true;
+                        self.web_client = Some(client);
+                    }
+                    Err(e) => {
+                        log_warn(&format!(
+                            "Login Web CGI gagal (melanjutkan tanpa sesi Web): {}",
+                            e
+                        ));
+                    }
+                }
+            }
+        }
+
+        let _ = self.config.save_config();
+    }
+
     pub fn print_header(&self) {
         clear_screen();
         let box_w = 76usize;
@@ -499,7 +601,8 @@ impl DbaiNokiaApp {
             } else {
                 raw_path.trim()
             };
-            let path = Path::new(target_str);
+            let norm_path = FactoryMIMExtractor::normalize_path(target_str);
+            let path = norm_path.as_path();
             let scan_res = if path.is_dir() {
                 FactoryMIMExtractor::extract_from_folder(path)
             } else {
@@ -691,6 +794,8 @@ impl DbaiNokiaApp {
 }
 
 fn main() {
+    init_terminal();
     let mut app = DbaiNokiaApp::default();
+    app.startup_wizard();
     app.main_loop();
 }
