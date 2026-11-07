@@ -106,11 +106,14 @@ impl InMemoryHttpServer {
                 match listener.accept() {
                     Ok((stream, _addr)) => {
                         let _ = stream.set_nonblocking(false);
-                        if let Ok(Some(_served)) = handle_http_connection(stream) {
-                            counter.fetch_add(1, Ordering::Relaxed);
-                        }
+                        let counter_clone = Arc::clone(&counter);
+                        std::thread::spawn(move || {
+                            if let Ok(Some(_served)) = handle_http_connection(stream) {
+                                counter_clone.fetch_add(1, Ordering::Relaxed);
+                            }
+                        });
                     }
-                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                         std::thread::sleep(Duration::from_millis(50));
                     }
                     Err(_) => break,
@@ -127,6 +130,12 @@ impl InMemoryHttpServer {
 
     pub fn stop(&self) {
         self.running.store(false, Ordering::Relaxed);
+    }
+}
+
+impl Drop for InMemoryHttpServer {
+    fn drop(&mut self) {
+        self.stop();
     }
 }
 
@@ -176,6 +185,12 @@ pub fn handle_tcp_stream_connection(
         .components()
         .filter(|c| matches!(c, std::path::Component::Normal(_)))
         .collect();
+    if clean_rel.as_os_str().is_empty() {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "Header stream TCP menghasilkan nama berkas kosong atau tidak valid",
+        ));
+    }
     let dest_path = backup_dir.join(&clean_rel);
     if let Some(parent) = dest_path.parent() {
         fs::create_dir_all(parent)?;
@@ -229,21 +244,26 @@ impl TcpBackupReceiver {
         let backup_done = Arc::new(AtomicBool::new(false));
         let run_flag = Arc::clone(&running);
         let done_flag = Arc::clone(&backup_done);
+        let backup_dir = Arc::new(backup_dir);
 
         std::thread::spawn(move || {
             while run_flag.load(Ordering::Relaxed) {
                 match listener.accept() {
                     Ok((stream, _addr)) => {
                         let _ = stream.set_nonblocking(false);
-                        if let Ok((filename, _bytes)) =
-                            handle_tcp_stream_connection(stream, &backup_dir)
-                        {
-                            if filename == "md5sums.txt" || filename.ends_with(".tar.gz") {
-                                done_flag.store(true, Ordering::Relaxed);
+                        let done_clone = Arc::clone(&done_flag);
+                        let dir_clone = Arc::clone(&backup_dir);
+                        std::thread::spawn(move || {
+                            if let Ok((filename, _bytes)) =
+                                handle_tcp_stream_connection(stream, &dir_clone)
+                            {
+                                if filename == "md5sums.txt" || filename == "rom_etc_dir.tar.gz" {
+                                    done_clone.store(true, Ordering::Relaxed);
+                                }
                             }
-                        }
+                        });
                     }
-                    Err(ref e) if e.kind() == io::ErrorKind::WouldBlock => {
+                    Err(e) if e.kind() == io::ErrorKind::WouldBlock => {
                         std::thread::sleep(Duration::from_millis(100));
                     }
                     Err(_) => break,
@@ -260,6 +280,12 @@ impl TcpBackupReceiver {
 
     pub fn stop(&self) {
         self.running.store(false, Ordering::Relaxed);
+    }
+}
+
+impl Drop for TcpBackupReceiver {
+    fn drop(&mut self) {
+        self.stop();
     }
 }
 
@@ -285,6 +311,12 @@ impl BackgroundServers {
     pub fn stop(&self) {
         self.http.stop();
         self.tcp.stop();
+    }
+}
+
+impl Drop for BackgroundServers {
+    fn drop(&mut self) {
+        self.stop();
     }
 }
 
@@ -357,5 +389,27 @@ mod tests {
         let (name, rest) = split_stream_header(sample).unwrap();
         assert_eq!(name, "non-userarea/mmcblk0boot0.bin");
         assert_eq!(rest, &[1, 2, 3, 4]);
+    }
+    #[test]
+    fn test_handle_tcp_stream_connection_rejects_parent_dir() {
+        let listener = TcpListener::bind("127.0.0.1:0").expect("bind listener");
+        let addr = listener.local_addr().unwrap();
+
+        let handle = std::thread::spawn(move || {
+            let (server_conn, _) = listener.accept().unwrap();
+            let temp_dir = std::env::temp_dir().join(format!("test_reject_{}", rand::random::<u32>()));
+            let _ = fs::create_dir_all(&temp_dir);
+            let res = handle_tcp_stream_connection(server_conn, &temp_dir);
+            let _ = fs::remove_dir_all(&temp_dir);
+            res
+        });
+
+        let mut client = TcpStream::connect(addr).unwrap();
+        client.write_all(b"..::::data").unwrap();
+        drop(client);
+
+        let res = handle.join().unwrap();
+        assert!(res.is_err());
+        assert_eq!(res.unwrap_err().kind(), io::ErrorKind::InvalidData);
     }
 }

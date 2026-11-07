@@ -5,6 +5,7 @@ use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use base64::Engine;
 use cbc::cipher::{block_padding::NoPadding, BlockEncryptMut, KeyIvInit};
 use rand::RngCore;
+use rsa::pkcs1::DecodeRsaPublicKey;
 use rsa::pkcs8::DecodePublicKey;
 use rsa::{Pkcs1v15Encrypt, RsaPublicKey};
 use serde::Deserialize;
@@ -49,6 +50,8 @@ pub struct WebCgiClient {
 }
 
 impl WebCgiClient {
+    pub const MAX_LOGIN_ITERATIONS: u32 = 1_000_000;
+
     pub fn new(host: &str, user: &str, pwd: &str) -> Self {
         let base_url = if host.starts_with("http") {
             host.to_string()
@@ -93,6 +96,12 @@ impl WebCgiClient {
 
     /// Derivasi nilai `ce` dengan *iterated SHA-256* sesuai `SPEC.md` §4.3.
     pub fn derive_ce(user: &str, pwd: &str, alati: &str, iterations: u32) -> Result<String, String> {
+        if iterations > Self::MAX_LOGIN_ITERATIONS {
+            return Err(format!(
+                "Jumlah iterasi login ({}) melebihi batas maksimum ({})",
+                iterations, Self::MAX_LOGIN_ITERATIONS
+            ));
+        }
         if iterations >= 2 {
             let mut hasher = Sha256::new();
             hasher.update(format!("{}{}", alati, pwd).as_bytes());
@@ -148,9 +157,9 @@ impl WebCgiClient {
                 .map_err(|e| format!("Gagal meminta salt: {}", e))?
                 .into_string()
                 .map_err(|e| e.to_string())?;
-            if let Ok(sr) = serde_json::from_str::<SaltResponse>(&salt_resp) {
-                alati = sr.alati;
-            }
+            let sr: SaltResponse = serde_json::from_str(&salt_resp)
+                .map_err(|e| format!("Respons salt bukan JSON valid: {}", e))?;
+            alati = sr.alati;
         }
 
         // 3. Derivasi ce dengan iterated SHA-256
@@ -207,13 +216,14 @@ impl WebCgiClient {
         let pad_len = 16 - (pt_bytes.len() % 16);
         let mut padded = Vec::with_capacity(pt_bytes.len() + pad_len);
         padded.extend_from_slice(pt_bytes);
-        padded.extend(std::iter::repeat(pad_len as u8).take(pad_len));
+        padded.resize(pt_bytes.len() + pad_len, pad_len as u8);
 
         let ct = Aes128CbcEnc::new(&key.into(), &iv.into())
             .encrypt_padded_vec_mut::<NoPadding>(&padded);
 
         let q = format!("{} {}", Self::b64(&key), Self::b64(&iv));
         let pubkey = RsaPublicKey::from_public_key_pem(&self.session.pubkey)
+            .or_else(|_| RsaPublicKey::from_pkcs1_pem(&self.session.pubkey))
             .map_err(|e| format!("Gagal memuat kunci publik RSA modem: {}", e))?;
         let ck_raw = pubkey
             .encrypt(&mut rand::thread_rng(), Pkcs1v15Encrypt, q.as_bytes())
@@ -272,5 +282,15 @@ mod tests {
         let ce2 = WebCgiClient::derive_ce("admin", "secret", "SALT123", 3).unwrap();
         assert!(!ce2.is_empty());
         assert_ne!(ce1, ce2);
+    }
+
+    #[test]
+    fn test_derive_ce_bounds_check() {
+        let err = WebCgiClient::derive_ce("admin", "secret", "salt", WebCgiClient::MAX_LOGIN_ITERATIONS + 1);
+        assert!(err.is_err());
+        assert!(err.unwrap_err().contains("melebihi batas"));
+
+        let ok = WebCgiClient::derive_ce("admin", "secret", "salt", 2);
+        assert!(ok.is_ok());
     }
 }

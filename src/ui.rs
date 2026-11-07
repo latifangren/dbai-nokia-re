@@ -1,4 +1,5 @@
 use std::io::{self, Write};
+use std::sync::OnceLock;
 use regex::Regex;
 
 pub struct Colors;
@@ -19,7 +20,8 @@ impl Colors {
 
 /// Menghapus urutan escape ANSI untuk perhitungan panjang karakter visual yang akurat (`SPEC.md` §3.3 #0).
 pub fn strip_ansi(s: &str) -> String {
-    let re = Regex::new(r"\x1b\[[0-9;]*[a-zA-Z]").expect("valid ANSI regex");
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| Regex::new(r"\x1b\[[0-9;]*[a-zA-Z]").expect("valid ANSI regex"));
     re.replace_all(s, "").into_owned()
 }
 

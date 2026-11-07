@@ -85,14 +85,20 @@ impl MD5Validator {
             if line.is_empty() {
                 continue;
             }
-            let mut parts = line.split_whitespace();
-            let Some(expected_md5) = parts.next() else {
+            let Some((expected_md5, rest)) = line.split_once(char::is_whitespace) else {
                 continue;
             };
-            let Some(rel_file) = parts.next() else {
-                continue;
-            };
+            let expected_md5 = expected_md5.trim();
+            let rel_file = rest.trim().trim_start_matches('*');
+
             if expected_md5.len() != 32 || !expected_md5.chars().all(|c| c.is_ascii_hexdigit()) {
+                continue;
+            }
+            if rel_file.is_empty()
+                || Path::new(rel_file)
+                    .components()
+                    .any(|c| !matches!(c, std::path::Component::Normal(_)))
+            {
                 continue;
             }
 
@@ -109,7 +115,25 @@ impl MD5Validator {
                 continue;
             }
 
-            let local_md5 = Self::calculate_md5(&file_path)?;
+            let local_md5 = match Self::calculate_md5(&file_path) {
+                Ok(hash) => hash,
+                Err(e) => {
+                    corrupt_count += 1;
+                    let err_str = format!("io_error: {}", e);
+                    report_lines.push(format!(
+                        "[KORUP]      {} (Modem: {} | Lokal: {})",
+                        rel_file, expected_md5, err_str
+                    ));
+                    entries.push(PartitionVerifyResult {
+                        filename: rel_file.to_string(),
+                        status: VerifyStatus::Corrupt {
+                            expected: expected_md5.to_lowercase(),
+                            actual: err_str,
+                        },
+                    });
+                    continue;
+                }
+            };
             if local_md5.eq_ignore_ascii_case(expected_md5) {
                 valid_count += 1;
                 report_lines.push(format!("[VALID]      {} ({})", rel_file, local_md5));
@@ -198,7 +222,9 @@ impl MD5Validator {
     }
 }
 
-/// Mengekstrak status kesehatan eMMC dari register Extended CSD 512 byte (`offset 267, 268, 269`, `SPEC.md` §5.3 #4).
+/// Mengekstrak status kesehatan eMMC dari register Extended CSD 512 byte.
+/// Mengembalikan tuple `(life_a, life_b, pre_eol)` dari offset 268 (DEVICE_LIFE_TIME_EST_TYP_A),
+/// 269 (DEVICE_LIFE_TIME_EST_TYP_B), dan 267 (PRE_EOL_INFO) (`SPEC.md` §5.3 #4).
 pub fn parse_ext_csd_health(ext_csd: &[u8]) -> Option<(String, String, String)> {
     if ext_csd.len() < 270 {
         return None;
@@ -260,5 +286,28 @@ mod tests {
         assert!(a.contains("0% - 10%"));
         assert!(b.contains("10% - 20%"));
         assert!(eol.contains("Normal"));
+    }
+    #[test]
+    fn test_verify_spaces_and_path_traversal() {
+        let temp_dir = std::env::temp_dir().join(format!("test_md5_{}", rand::random::<u32>()));
+        fs::create_dir_all(&temp_dir).unwrap();
+
+        let file1 = temp_dir.join("file with spaces.img");
+        fs::write(&file1, b"hello world").unwrap();
+        let hash1 = MD5Validator::calculate_md5(&file1).unwrap();
+
+        let md5sums_content = format!(
+            "{} *file with spaces.img\n{} ../escape.img\n{} normal.img\n",
+            hash1, hash1, hash1
+        );
+        fs::write(temp_dir.join("md5sums.txt"), md5sums_content).unwrap();
+
+        let summary = MD5Validator::verify(&temp_dir).unwrap();
+        assert_eq!(summary.valid_count, 1);
+        assert_eq!(summary.missing_count, 1); // normal.img is missing
+        // ../escape.img was skipped due to Component::ParentDir
+        assert_eq!(summary.entries.len(), 2);
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

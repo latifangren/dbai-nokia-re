@@ -13,6 +13,12 @@ pub const DEFAULT_CHECK_PORTS: [u16; 4] = [443, 80, 53, 2222];
 /// Batas maksimum uptime kernel (`detik`) agar sesi dianggap berasal dari boot baru (`SPEC.md` §5.2).
 pub const MAX_FRESH_BOOT_UPTIME_SECS: f64 = 90.0;
 
+/// Password default baru untuk SuperAdmin Web GUI (`SPEC.md` §7.2 & §8).
+pub const DEFAULT_SUPERADMIN_NEW_PWD: &str = "DBAI2K27";
+
+/// Perintah pembersihan artefak root / unroot (`SPEC.md` §6 S7 & §7.4).
+pub const UNROOT_CLEANUP_CMD: &str = "if [ -f /tmp/fastmile_keeper.pid ]; then kill -9 $(cat /tmp/fastmile_keeper.pid) 2>/dev/null; rm -f /tmp/fastmile_keeper.pid; fi; killall -9 ssh_keeper.sh fastmile_keeper.sh 2>/dev/null; rm -f /configs/aic_conf.json /configs/init_action.sh /tmp/busybox /tmp/ssh_keeper.sh /tmp/test_decrypt_node /configs/test_decrypt_node /configs/nonpersistant/fastmile_* /configs/nonpersistant/rootdone 2>/dev/null; sync";
+
 /// Perintah Langkah 1 OTA: Membaca versi firmware aktif (`SPEC.md` §7.3).
 pub const OTA_CMD_READ_VERSION: &str = "cat /etc/version 2>/dev/null || uname -a";
 
@@ -75,7 +81,7 @@ pub fn parse_proc_uptime(raw: &str) -> Option<f64> {
 
 /// Memeriksa apakah nilai `/proc/uptime` memenuhi syarat sesi boot baru (`<= 90.0` detik) (`SPEC.md` §5.2).
 pub fn is_fresh_boot_uptime(uptime_secs: f64) -> bool {
-    uptime_secs >= 0.0 && uptime_secs <= MAX_FRESH_BOOT_UPTIME_SECS
+    (0.0..=MAX_FRESH_BOOT_UPTIME_SECS).contains(&uptime_secs)
 }
 
 /// Memeriksa apakah port SSH target sudah merespons banner protokol `SSH-` (`SPEC.md` §5.2).
@@ -163,6 +169,7 @@ impl SshSession {
                             std::thread::sleep(Duration::from_millis(400));
                             continue;
                         }
+                        let _ = candidate.install_guardian();
                         return Ok((candidate, uptime));
                     }
                 }
@@ -191,6 +198,10 @@ impl SshSession {
             "LogLevel=ERROR".to_string(),
             "-o".to_string(),
             format!("ConnectTimeout={}", connect_timeout_secs.max(1)),
+            "-o".to_string(),
+            "ServerAliveInterval=5".to_string(),
+            "-o".to_string(),
+            "ServerAliveCountMax=3".to_string(),
         ];
         if self.key_path.exists() {
             args.push("-i".to_string());
@@ -244,9 +255,10 @@ impl SshSession {
             .spawn()
             .map_err(|e| format!("Gagal menjalankan proses ssh: {}", e))?;
         if let Some(mut child_stdin) = child.stdin.take() {
-            child_stdin
-                .write_all(stdin_bytes)
-                .map_err(|e| format!("Gagal menulis payload ke stdin ssh: {}", e))?;
+            let bytes = stdin_bytes.to_vec();
+            std::thread::spawn(move || {
+                let _ = child_stdin.write_all(&bytes);
+            });
         }
         let out = child
             .wait_with_output()
@@ -270,6 +282,39 @@ impl SshSession {
 
         let status = cmd.status()?;
         Ok(status.code().unwrap_or(0))
+    }
+
+    /// Memasang watchdog in-memory `/tmp/ssh_keeper.sh` di latar belakang (`SPEC.md` §5.2 #3 & §6 S4).
+    pub fn install_guardian(&self) -> Result<(), String> {
+        let cmd = r#"if ! pgrep -f "ssh_keeper.sh" >/dev/null 2>&1; then cat << 'EOF' > /tmp/ssh_keeper.sh
+#!/bin/sh
+while true; do
+  iptables -C INPUT -p tcp --dport 2222 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 2222 -j ACCEPT 2>/dev/null
+  if ! pgrep -f "sshd.*2222" >/dev/null 2>&1; then
+    /usr/sbin/sshd -p 2222 2>/dev/null
+  fi
+  sleep 2
+done
+EOF
+chmod 755 /tmp/ssh_keeper.sh
+nohup /bin/sh /tmp/ssh_keeper.sh >/dev/null 2>&1 &
+fi"#;
+        let (code, _, stderr) = self.exec_command(cmd, 10)?;
+        if code == 0 {
+            Ok(())
+        } else {
+            Err(format!("Gagal memasang guardian: exit code {}, {}", code, stderr))
+        }
+    }
+
+    /// Menghapus akses root dan membersihkan artefak toolkit di modem (`SPEC.md` §7.4).
+    pub fn revoke_root(&self) -> Result<(), String> {
+        let (code, _, stderr) = self.exec_command(UNROOT_CLEANUP_CMD, 10)?;
+        if code == 0 {
+            Ok(())
+        } else {
+            Err(format!("Revoke root gagal dengan exit code {}: {}", code, stderr))
+        }
     }
 
     /// Mengubah password SuperAdmin Web GUI melalui `cfgcli` (`SPEC.md` §7.2 Menu `[s]`).

@@ -72,6 +72,7 @@ if [ ! -x /tmp/busybox ]; then
     wget -qO /tmp/busybox http://{pc_ip}:{http_port}/busybox || curl -s http://{pc_ip}:{http_port}/busybox -o /tmp/busybox
     chmod 755 /tmp/busybox
 fi
+[ -x /tmp/busybox ] || {{ echo "Gagal mengunduh /tmp/busybox dari PC" >&2; exit 1; }}
 rm -f /tmp/md5sums.txt
 touch /tmp/md5sums.txt
 
@@ -121,6 +122,7 @@ if [ ! -x /tmp/busybox ]; then
     wget -qO /tmp/busybox http://{pc_ip}:{http_port}/busybox || curl -s http://{pc_ip}:{http_port}/busybox -o /tmp/busybox
     chmod 755 /tmp/busybox
 fi
+[ -x /tmp/busybox ] || {{ echo "Gagal mengunduh /tmp/busybox dari PC" >&2; exit 1; }}
 if [ -d /data ]; then
     (printf "user_data_dir.tar.gz::::" ; /tmp/busybox tar -czf - /data 2>/dev/null) | /tmp/busybox nc {pc_ip} {tcp_port}
 fi
@@ -141,6 +143,14 @@ fi
         tcp_port: u16,
         target_rel: &str,
     ) -> String {
+        if target_rel.is_empty()
+            || !target_rel
+                .chars()
+                .all(|c| c.is_ascii_alphanumeric() || c == '_' || c == '.' || c == '/' || c == '-')
+        {
+            return "#!/bin/sh\necho \"Target partisi tidak valid\" >&2\nexit 1\n".to_string();
+        }
+
         let clean_label = target_rel
             .trim_start_matches("non-userarea/")
             .trim_end_matches(".img")
@@ -149,12 +159,26 @@ fi
             r#"#!/bin/sh
 mount -o remount,exec /tmp 2>/dev/null
 if [ ! -x /tmp/busybox ]; then
-    wget -qO /tmp/busybox http://{pc_ip}:{http_port}/busybox
+    wget -qO /tmp/busybox http://{pc_ip}:{http_port}/busybox || curl -s http://{pc_ip}:{http_port}/busybox -o /tmp/busybox
     chmod 755 /tmp/busybox
 fi
+[ -x /tmp/busybox ] || {{ echo "Gagal mengunduh /tmp/busybox dari PC" >&2; exit 1; }}
+
+if [ "{clean_label}" = "ext_csd" ]; then
+    if [ -r /sys/kernel/debug/mmc0/mmc0:0001/ext_csd ]; then
+        (printf "non-userarea/ext_csd.bin::::" ; /tmp/busybox xxd -r -p /sys/kernel/debug/mmc0/mmc0:0001/ext_csd 2>/dev/null || cat /sys/kernel/debug/mmc0/mmc0:0001/ext_csd) | /tmp/busybox nc {pc_ip} {tcp_port}
+        exit 0
+    else
+        echo "Partisi {clean_label} tidak ditemukan" >&2
+        exit 1
+    fi
+fi
+
 target_dev=""
 if [ "{clean_label}" = "mmcblk0boot0" ] || [ "{clean_label}" = "mmcblk0boot1" ]; then
-    target_dev="/dev/{clean_label}"
+    if [ -b "/dev/{clean_label}" ]; then
+        target_dev="/dev/{clean_label}"
+    fi
 else
     for uev in /sys/block/mmcblk0/mmcblk0p*/uevent; do
         if grep -q "^PARTNAME={clean_label}$" "$uev" 2>/dev/null; then
@@ -164,13 +188,20 @@ else
             break
         fi
     done
+    if [ -z "$target_dev" ] && [ -b "/dev/{clean_label}" ]; then
+        target_dev="/dev/{clean_label}"
+    fi
 fi
+
 if [ -n "$target_dev" ] && [ -b "$target_dev" ]; then
     (printf "{target_rel}::::" ; cat "$target_dev") | /tmp/busybox nc {pc_ip} {tcp_port}
     m=$(/tmp/busybox md5sum "$target_dev" | /tmp/busybox awk '{{print $1}}')
     /tmp/busybox sed -i "\|  {target_rel}$|d" /tmp/md5sums.txt 2>/dev/null
     echo "$m  {target_rel}" >> /tmp/md5sums.txt
     (printf "md5sums.txt::::" ; cat /tmp/md5sums.txt) | /tmp/busybox nc {pc_ip} {tcp_port}
+else
+    echo "Partisi {clean_label} tidak ditemukan" >&2
+    exit 1
 fi
 "#,
             pc_ip = pc_ip,
@@ -256,7 +287,7 @@ echo "size=$sz"
             return Ok(None);
         }
         let raw = fs::read(&ext_bin_path)?;
-        let Some((pre_eol, life_a, life_b)) = parse_ext_csd_health(&raw) else {
+        let Some((life_a, life_b, pre_eol)) = parse_ext_csd_health(&raw) else {
             return Ok(None);
         };
 
@@ -366,5 +397,49 @@ mod tests {
             DumperEngine::generate_redump_single_bash("192.168.1.2", 8081, 8888, "boot.img");
         assert!(redump_sh.contains("^PARTNAME=boot$"));
         assert!(redump_sh.contains("boot.img::::"));
+    }
+
+    #[test]
+    fn test_update_health_from_extcsd_jedec_offsets() {
+        let temp_dir = std::env::temp_dir().join(format!("test_extcsd_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let non_user = temp_dir.join("non-userarea");
+        fs::create_dir_all(&non_user).unwrap();
+
+        let mut raw = vec![0u8; 512];
+        raw[267] = 0x01; // Normal
+        raw[268] = 0x02; // 10% - 20%
+        raw[269] = 0x03; // 20% - 30%
+        fs::write(non_user.join("ext_csd.bin"), &raw).unwrap();
+        fs::write(non_user.join("info_eMMC.txt"), "Device: eMMC\n").unwrap();
+
+        let res = DumperEngine::update_health_from_extcsd(&temp_dir).unwrap();
+        assert!(res.is_some());
+        let content = fs::read_to_string(non_user.join("info_eMMC.txt")).unwrap();
+        let line_eol = content.lines().find(|l| l.contains("PRE_EOL_INFO (Offset 267)")).unwrap();
+        assert!(line_eol.contains("Normal"));
+        let line_a = content.lines().find(|l| l.contains("DEVICE_LIFE_TIME_EST_TYP_A (Offset 268)")).unwrap();
+        assert!(line_a.contains("10% - 20%"));
+        let line_b = content.lines().find(|l| l.contains("DEVICE_LIFE_TIME_EST_TYP_B (Offset 269)")).unwrap();
+        assert!(line_b.contains("20% - 30%"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_generate_redump_single_bash_rejects_metachars() {
+        let bad_targets = [
+            "boot.img; rm -rf /",
+            "test$(whoami).img",
+            "`id`.bin",
+            "foo|bar.img",
+            "foo&bar.img",
+            "",
+            "part with spaces.img",
+        ];
+        for bad in bad_targets {
+            let script = DumperEngine::generate_redump_single_bash("192.168.1.2", 8081, 8888, bad);
+            assert!(script.contains("exit 1"));
+            assert!(!script.contains("PARTNAME="));
+        }
     }
 }

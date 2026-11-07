@@ -12,6 +12,8 @@ pub struct SavedConfig {
     pub web_pwd: Option<String>,
     pub ssh_pwd: Option<String>,
     pub backup_dir: Option<String>,
+    pub http_port: Option<u16>,
+    pub tcp_port: Option<u16>,
 }
 
 #[derive(Debug, Clone)]
@@ -49,9 +51,7 @@ impl Default for Config {
             is_web_authenticated: false,
         };
         cfg.load_saved_config();
-        let (ip, matched) = cfg.detect_pc_ip();
-        cfg.pc_ip = ip;
-        cfg.is_subnet_matched = matched;
+        cfg.refresh_pc_ip();
         cfg
     }
 }
@@ -78,6 +78,12 @@ impl Config {
                 if let Some(bd) = saved.backup_dir.filter(|s| !s.is_empty()) {
                     self.backup_dir = bd;
                 }
+                if let Some(hp) = saved.http_port.filter(|&p| p > 0) {
+                    self.http_port = hp;
+                }
+                if let Some(tp) = saved.tcp_port.filter(|&p| p > 0) {
+                    self.tcp_port = tp;
+                }
             }
         }
     }
@@ -89,12 +95,29 @@ impl Config {
             web_pwd: Some(self.web_pwd.clone()),
             ssh_pwd: Some(self.ssh_pwd.clone()),
             backup_dir: Some(self.backup_dir.clone()),
+            http_port: Some(self.http_port),
+            tcp_port: Some(self.tcp_port),
         };
         let json = serde_json::to_string_pretty(&saved)
             .map_err(|e| io::Error::new(io::ErrorKind::InvalidData, e))?;
-        fs::write(Self::config_path(), json)
+        let path = Self::config_path();
+        fs::write(&path, json)?;
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            if let Ok(mut perms) = fs::metadata(&path).map(|m| m.permissions()) {
+                perms.set_mode(0o600);
+                let _ = fs::set_permissions(&path, perms);
+            }
+        }
+        Ok(())
     }
 
+    pub fn refresh_pc_ip(&mut self) {
+        let (ip, matched) = self.detect_pc_ip();
+        self.pc_ip = ip;
+        self.is_subnet_matched = matched;
+    }
     /// Mendeteksi IP lokal PC yang menghadap ke subnet `/24` modem (`SPEC.md` §3.3 #12).
     pub fn detect_pc_ip(&self) -> (String, bool) {
         let target_prefix = self
@@ -113,5 +136,27 @@ impl Config {
             }
         }
         ("127.0.0.1".to_string(), false)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_saved_config_round_trip() {
+        let saved = SavedConfig {
+            modem_ip: Some("192.168.1.1".to_string()),
+            web_pwd: Some("secret".to_string()),
+            ssh_pwd: Some("rootpwd".to_string()),
+            backup_dir: Some("backups".to_string()),
+            http_port: Some(8081),
+            tcp_port: Some(8888),
+        };
+        let json = serde_json::to_string(&saved).expect("serialize");
+        let decoded: SavedConfig = serde_json::from_str(&json).expect("deserialize");
+        assert_eq!(decoded.http_port, Some(8081));
+        assert_eq!(decoded.tcp_port, Some(8888));
+        assert_eq!(decoded.modem_ip, Some("192.168.1.1".to_string()));
     }
 }
