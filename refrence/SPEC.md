@@ -614,20 +614,23 @@ Menjalankan 5 langkah berurutan melalui SSH di modem (mengoreksi spesifikasi lam
 
 ---
 
-## 8. Manajemen Kredensial & Konfigurasi (Telah Dikoreksi) (OBS, Tinggi)
+## 8. Inventaris Nilai Hardcoded, Kredensial, & Konfigurasi di Biner Asli (OBS, Tinggi)
 
-*(Sesuai kebijakan keamanan dokumentasi, nilai *password* plaintext bawaan yang ditemukan di biner tidak dicantumkan secara harfiah di bawah ini.)*
+Tabel dan rincian berikut mendokumentasikan seluruh nilai *hardcoded* (password default, pasangan hash `/etc/shadow`, *ciphertext* `libcfgdb.so`, parameter jaringan, serta konstanta perangkat keras) yang diekstrak dari `_nuitka_temp.dll` (`dbai_nokia.dll`) dan `bin\test_decrypt_node`:
 
-| Item | Lokasi / Slot `mod_consts` | Mekanisme Penanganan (OBS) |
-|---|---|---|
-| `config_toolkit.json` | `Config.load_saved_config` (`0x1800131c0`) & `save_config` (`0x180014fb0`) | Disimpan sebagai JSON *plaintext* (`indent=4`) di direktori kerja/eksekusi. Memuat `modem_ip`, `web_pwd`, `ssh_pwd`, dan `backup_dir`. |
-| `fastmile_key` & `fastmile_key.pub` | `SSHKeyManager.ensure_keys` (`0x180019f10`) & `fix_permissions` (`0x180019280`) | Kunci RSA 2048-bit (`public_exponent=65537`) dibuat saat runtime dengan pustaka `cryptography`. Di Linux diatur `chmod 0o600`; di Windows diatur dengan `icacls <path> /inheritance:r /grant:r "%USERNAME%:R"`. |
-| Password Web Admin (`web_pwd`) | `startup_wizard` (`0x18006fb50`) / `config_toolkit.json` | Diinput pengguna; diverifikasi terhadap `FastMileRCE.login` menggunakan *iterated SHA-256* (§4.3). |
-| Password Root SSH (`ssh_pwd`) | `mod_consts[42, 299, 469]` | Memiliki nilai default *hardcoded* di `Config.__init__` (`mod_consts[42]`) yang juga disetel ke akun `root` modem melalui `chpasswd` saat `deploy_detector` dan `SSHSniper.snipe`. |
-| Password SuperAdmin Baru | `menu_change_superuser_pwd` (`0x18008fcc0`, `mod_consts[1235..1236]`) | Menawarkan nilai default *hardcoded* (`mod_consts[1236]`) bila pengguna menekan Enter; disimpan ke modem sebagai SHA-256 huruf besar via `cfgcli -s`. |
-| Hash Shadow Root Pabrik | `FactoryMIMExtractor` (`mod_consts[893..897, 1538..1540]`) | Menyimpan **2 pasang hash `/etc/shadow` SHA-256-crypt (`$5$h9AY67gazvN9fEl5$...`) beserta *plaintext* pasangannya** (`KNOWN_ROOT_HASH`/`KNOWN_ROOT_PASS` dan `DEFAULT_FASTMILE_HASH`/`DEFAULT_FASTMILE_PASS`) untuk pencocokan langsung tanpa Hashcat. |
-| Ciphertext `libcfgdb.so` | `bin\test_decrypt_node` (`.rodata` `0x000b98`) | Menyimpan 5 *ciphertext* Base64 statis (`admin`, `superadmin (current/preset)`, `superadmin dv`, `telecomadmin`, `Wlan secret`) untuk didekripsi di modem via `cfg_db_decryptNodeValue`. |
-| Kunci AES-128, IV, Token Sesi | `FastMileRCE.login` & `_enc_post` | Dibuat per sesi/permintaan menggunakan CSPRNG sistem operasi (`os.urandom(16)`). |
+| Kategori / Item | Lokasi di Biner / Slot `mod_consts` | Nilai Hardcoded Eksak (OBS) | Mekanisme Penggunaan di Aplikasi Asli |
+|---|---|---|---|
+| Password Root SSH (`ssh_pwd`) | `Config.__init__` (`mod_consts[42]`), `deploy_detector` (`mod_consts[299]`), `SSHSniper.snipe` (`mod_consts[469]`) | `FastMileR00t!` | Nilai default `self.ssh_pwd` saat inisialisasi; juga disetel ke akun `root` modem via `echo "root:FastMileR00t!" \| chpasswd`. |
+| Password SuperAdmin Baru | `menu_change_superuser_pwd` (`0x18008fcc0`, `mod_consts[1235..1236]`) | `DBAI2K27` | Nilai default pada prompt `[?] Masukkan Password SuperAdmin baru [Default: DBAI2K27]: ` bila pengguna menekan Enter; di-hash SHA-256 *uppercase* lalu ditulis via `cfgcli -s`. |
+| Hash Shadow Root Pabrik (`KNOWN_ROOT_HASH` & `KNOWN_ROOT_PASS`) | `FactoryMIMExtractor` (`mod_consts[1538..1539]`, offset berkas `0x1128067`) | Hash: `$5$h9AY67gazvN9fEl5$4sI08TV8DiAV/3Lgv/QZnokbiM8MWabqQlXdM/BtySC`<br>Plaintext: `iHe,JtCJkCMetyXG` | Dicocokkan langsung dengan baris `root:` dari `/etc/shadow` untuk menampilkan password root konsol/UART bawaan pabrik tanpa menjalankan Hashcat. |
+| Hash Shadow Root Toolkit (`DEFAULT_FASTMILE_HASH` & `DEFAULT_FASTMILE_PASS`) | `FactoryMIMExtractor` (`mod_consts[1540]`, offset berkas `0x11280b8`) | Hash: `$5$h9AY67gazvN9fEl5$QMQ00BPno6Bvbbr9Vxdw9M4qcB3cU759mjfTEvZp5H/`<br>Plaintext: `FastMileR00t!` | Dicocokkan dengan `/etc/shadow` jika password root modem sudah diganti oleh toolkit menjadi `FastMileR00t!`. |
+| Komentar Kunci Publik SSH | `SSHKeyManager.ensure_keys` (`0x180019f10`, `mod_consts[139]`) | ` dbai@<hostname>` | Akhiran komentar yang ditambahkan pada `fastmile_key.pub` (format OpenSSH). |
+| Parameter Jaringan & Path Default | `Config.__init__` (`0x180010f50`, `mod_consts[39..48]`) | `modem_ip = "192.168.1.1"`, `web_user = "admin"`, `ssh_user = "root"`, `ssh_ports = [2222, 22]`, `key_name = "fastmile_key"`, `http_port = 8081`, `tcp_port = 8888`, `backup_dir = "image_backup"` | Nilai awal sebelum ditimpa oleh `config_toolkit.json`. |
+| User-Agent HTTP CGI | `FastMileRCE._open` (`0x18001c600`, `mod_consts[188]`) | `Mozilla/5.0 (DBAI-Nokia-Toolkit)` | Dikirim pada setiap request HTTP `GET`/`POST` ke Web CGI modem. |
+| Marking Fisik Chip eMMC BIWIN | `DumperEngine.fetch_emmc_info` (`0x18003e8a0`, `mod_consts[550]`) | `BWCMAB811G04G 233254126 1258RD (BIWIN 4GB eMMC 5.1 BGA-153)` | Dicetak otomatis ke layar dan `non-userarea/info_eMMC.txt` apabila `manfid` sysfs bernilai `0x0000f4`. |
+| 5 Ciphertext Statis `libcfgdb.so` | `bin\test_decrypt_node` (`.rodata` `0x000b98`–`0x000dfc` & `.data` `0x010000`) | Lihat tabel 5 entri di §7.1 butir 3 (`WtWho5Al...`, `+j/dPY1c...`, `F4xNLuhH...`, `ziYNEtl8...`, `H+f7T34N...`) | Didekripsi di modem menggunakan `cfg_db_decryptNodeValue` dari `/usr/lib/libcfgdb.so`. |
+| `config_toolkit.json` | `Config.load_saved_config` (`0x1800131c0`) & `save_config` (`0x180014fb0`) | Menyimpan `modem_ip`, `web_pwd`, `ssh_pwd`, dan `backup_dir` | Disimpan sebagai JSON *plaintext* (`indent=4`) di direktori kerja/eksekusi. |
+| Kunci AES-128, IV, Token Sesi | `FastMileRCE.login` & `_enc_post` | Dibuat dinamis per sesi (`os.urandom(16)`) | Digunakan untuk enkripsi payload `POST` pasca-login (§4.4). |
 
 ---
 
