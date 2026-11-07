@@ -231,6 +231,7 @@ pub struct TcpBackupReceiver {
     pub port: u16,
     pub running: Arc<AtomicBool>,
     pub backup_done: Arc<AtomicBool>,
+    pub files_received: Arc<AtomicU64>,
 }
 
 impl TcpBackupReceiver {
@@ -242,8 +243,10 @@ impl TcpBackupReceiver {
 
         let running = Arc::new(AtomicBool::new(true));
         let backup_done = Arc::new(AtomicBool::new(false));
+        let files_received = Arc::new(AtomicU64::new(0));
         let run_flag = Arc::clone(&running);
         let done_flag = Arc::clone(&backup_done);
+        let count_flag = Arc::clone(&files_received);
         let backup_dir = Arc::new(backup_dir);
 
         std::thread::spawn(move || {
@@ -252,12 +255,21 @@ impl TcpBackupReceiver {
                     Ok((stream, _addr)) => {
                         let _ = stream.set_nonblocking(false);
                         let done_clone = Arc::clone(&done_flag);
+                        let count_clone = Arc::clone(&count_flag);
                         let dir_clone = Arc::clone(&backup_dir);
                         std::thread::spawn(move || {
-                            if let Ok((filename, _bytes)) =
+                            if let Ok((filename, bytes)) =
                                 handle_tcp_stream_connection(stream, &dir_clone)
                             {
-                                if filename == "md5sums.txt" || filename == "rom_etc_dir.tar.gz" {
+                                count_clone.fetch_add(1, Ordering::Relaxed);
+                                println!(
+                                    "{}[TCP SAVED]{} Selesai: {} ({} bytes)",
+                                    crate::ui::Colors::GREEN,
+                                    crate::ui::Colors::RESET,
+                                    filename,
+                                    bytes
+                                );
+                                if filename == "md5sums.txt" || filename.ends_with(".tar.gz") {
                                     done_clone.store(true, Ordering::Relaxed);
                                 }
                             }
@@ -275,7 +287,23 @@ impl TcpBackupReceiver {
             port: local_port,
             running,
             backup_done,
+            files_received,
         })
+    }
+
+    pub fn reset_done(&self) {
+        self.backup_done.store(false, Ordering::Relaxed);
+    }
+
+    pub fn wait_until_done(&self, timeout: Duration) -> bool {
+        let start = std::time::Instant::now();
+        while start.elapsed() < timeout {
+            if self.backup_done.load(Ordering::Relaxed) {
+                return true;
+            }
+            std::thread::sleep(Duration::from_millis(100));
+        }
+        self.backup_done.load(Ordering::Relaxed)
     }
 
     pub fn stop(&self) {

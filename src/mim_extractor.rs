@@ -3,6 +3,7 @@ use std::fs::{self, File};
 use std::io::{self, BufRead, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
 use base64::{engine::general_purpose::STANDARD as B64_STD, Engine as _};
+use sha2::{Digest, Sha256};
 
 /// Magic needle pada partisi `Factory_MIM` (`SPEC.md` §7.1 #1 `mod_consts[820]`).
 pub const MIM_MAGIC_NEEDLE: &[u8] = b"5GGW2-OMNI-2\0";
@@ -290,8 +291,15 @@ impl FactoryMIMExtractor {
         source_label: &str,
         shadow_line: Option<&str>,
         decrypted_nodes: &BTreeMap<String, String>,
+        input_web_pwd: Option<&str>,
     ) -> String {
         let mut out = Self::format_hardware_summary(entries, source_label);
+        let input_pwd_clean = input_web_pwd.map(|s| s.trim()).filter(|s| !s.is_empty());
+        let input_pwd_sha256 = input_pwd_clean.map(|pwd| {
+            let mut hasher = Sha256::new();
+            hasher.update(pwd.as_bytes());
+            hex::encode(hasher.finalize())
+        });
 
         out.push_str("================================================================================\n");
         out.push_str("AUDIT KREDENSIAL PABRIK (Factory_MIM)\n");
@@ -300,7 +308,18 @@ impl FactoryMIMExtractor {
             out.push_str(&format!("Password (Base64)        : {}\n", pwd_b64));
             if let Some(sha_hex) = Self::decode_mim_password_sha256_hex(pwd_b64) {
                 out.push_str(&format!("Password (SHA-256 Hex)   : {}\n", sha_hex));
-                if let Some(plain) = Self::lookup_potfile(&sha_hex, &[]) {
+                if let (Some(in_pwd), Some(in_hash)) = (input_pwd_clean, &input_pwd_sha256) {
+                    if in_hash.eq_ignore_ascii_case(&sha_hex) {
+                        out.push_str(&format!(
+                            "Password (Plaintext)     : {} (Terverifikasi Inisialisasi Awal / Cocok dgn Factory MIM)\n",
+                            in_pwd
+                        ));
+                    } else if let Some(plain) = Self::lookup_potfile(&sha_hex, &[]) {
+                        out.push_str(&format!("Password (Plaintext)     : {} (cracked via potfile)\n", plain));
+                    } else {
+                        out.push_str("Password (Plaintext)     : [Belum ter-crack di potfile]\n");
+                    }
+                } else if let Some(plain) = Self::lookup_potfile(&sha_hex, &[]) {
                     out.push_str(&format!("Password (Plaintext)     : {} (cracked via potfile)\n", plain));
                 } else {
                     out.push_str("Password (Plaintext)     : [Belum ter-crack di potfile]\n");
@@ -337,6 +356,15 @@ impl FactoryMIMExtractor {
             for (label, dec_val) in decrypted_nodes {
                 out.push_str(&format!("[NODE] {}\n", label));
                 out.push_str(&format!("  SHA-256   : {}\n", dec_val));
+                if let (Some(in_pwd), Some(in_hash)) = (input_pwd_clean, &input_pwd_sha256) {
+                    if in_hash.eq_ignore_ascii_case(dec_val) {
+                        out.push_str(&format!(
+                            "  Plaintext : {} (Terverifikasi Inisialisasi Awal)\n",
+                            in_pwd
+                        ));
+                        continue;
+                    }
+                }
                 if let Some(plain) = Self::lookup_potfile(dec_val, &[]) {
                     out.push_str(&format!("  Plaintext : {} (cracked via potfile)\n", plain));
                 } else {
@@ -423,6 +451,7 @@ impl FactoryMIMExtractor {
             "Live SSH (/dev/block/Factory_MIM)",
             shadow_line.as_deref(),
             &decrypted_nodes,
+            Some(&config.web_pwd),
         );
         let saved_path = Self::save_credentials_report(
             Path::new(&config.backup_dir),
@@ -556,5 +585,26 @@ mod tests {
                 PathBuf::from("/mnt/d")
             );
         }
+    }
+
+    #[test]
+    fn test_format_credentials_matches_input_web_pwd() {
+        let mut hasher = Sha256::new();
+        hasher.update(b"MyStickerPass123");
+        let digest = hasher.finalize();
+        let b64_pwd = B64_STD.encode(digest);
+
+        let mut entries = BTreeMap::new();
+        entries.insert("Product".to_string(), "5GGW2-OMNI-2".to_string());
+        entries.insert("Password".to_string(), b64_pwd);
+
+        let report = FactoryMIMExtractor::format_credentials_report(
+            &entries,
+            "UnitTest",
+            None,
+            &BTreeMap::new(),
+            Some("MyStickerPass123"),
+        );
+        assert!(report.contains("MyStickerPass123 (Terverifikasi Inisialisasi Awal / Cocok dgn Factory MIM)"));
     }
 }

@@ -133,6 +133,14 @@ impl DbaiNokiaApp {
         let _ = self.config.save_config();
     }
 
+    pub fn is_ssh_connected(&self) -> bool {
+        if let Some(ref ssh) = self.active_ssh {
+            sniper::is_any_port_open(&ssh.host, &[ssh.port], Duration::from_millis(250))
+        } else {
+            false
+        }
+    }
+
     pub fn print_header(&self) {
         clear_screen();
         let box_w = 76usize;
@@ -175,6 +183,27 @@ impl DbaiNokiaApp {
             Colors::CYAN,
             Colors::RESET
         );
+        let ssh_alive = self.is_ssh_connected();
+        let ssh_status = if ssh_alive {
+            format!("{}Terkoneksi (OK){}", Colors::GREEN, Colors::RESET)
+        } else {
+            format!("{}Belum Terkoneksi (!){}", Colors::YELLOW, Colors::RESET)
+        };
+        let os_line = format!(
+            "  Platform: {}{}{} | SSH Status: {}",
+            Colors::WHITE,
+            std::env::consts::OS,
+            Colors::RESET,
+            ssh_status
+        );
+        println!(
+            "{}║{}{}{}║{}",
+            Colors::CYAN,
+            Colors::RESET,
+            pad_ansi(&os_line, box_w),
+            Colors::CYAN,
+            Colors::RESET
+        );
         println!("{}╚{}╝{}", Colors::CYAN, div, Colors::RESET);
     }
 
@@ -190,17 +219,140 @@ impl DbaiNokiaApp {
             Err(e) => log_error(&format!("Gagal menyiapkan kunci SSH: {}", e)),
         }
     }
+
     pub fn run_full_pipeline(&mut self) {
-        log_info("Memulai Full Automation Pipeline...");
-        self.menu_ensure_keys();
+        println!("\n--- [ FULL AUTOMATED PIPELINE ] ---");
+        log_info("Alur: Buat Key -> Aktivasi SSH -> Sinyal Reboot -> SSH Sniper -> Auto-Backup -> Verifikasi MD5 -> Kredensial");
         self.config.refresh_pc_ip();
+        if !self.config.is_subnet_matched {
+            log_warn(&format!(
+                "Subnet PC ({}) dan Modem ({}) tidak sama!",
+                self.config.pc_ip, self.config.modem_ip
+            ));
+            let ans = prompt_line("[?] Modem mungkin gagal mentransfer data ke PC. Tetap lanjut? [y/N]: ")
+                .unwrap_or_default();
+            if !matches!(ans.trim().to_lowercase().as_str(), "y" | "yes" | "ya") {
+                return;
+            }
+        }
+
+        log_info("Tahap 1: Memeriksa pasangan SSH Key...");
+        let pubkey = match SSHKeyManager::ensure_keys(&self.config.key_name) {
+            Ok((priv_path, pub_str)) => {
+                log_success(&format!(
+                    "Pasangan kunci SSH siap: {} ({} byte pubkey)",
+                    priv_path.display(),
+                    pub_str.len()
+                ));
+                pub_str
+            }
+            Err(e) => {
+                log_error(&format!("Gagal menyiapkan kunci SSH: {}", e));
+                return;
+            }
+        };
+
+        let mut ssh_already_open = false;
+        if let Some(ref existing) = self.active_ssh {
+            if let Ok((0, _, _)) = existing.exec_command("true", 3) {
+                ssh_already_open = true;
+            }
+        }
+        if !ssh_already_open
+            && sniper::is_any_port_open(
+                &self.config.modem_ip,
+                &self.config.ssh_ports,
+                Duration::from_millis(600),
+            )
+        {
+            if let Ok((sess, up)) =
+                SshSession::connect_or_poll(&self.config, Duration::from_secs(10), false)
+            {
+                log_success(&format!(
+                    "Port SSH {}:{} sudah aktif (uptime {:.2}s)!",
+                    sess.host, sess.port, up
+                ));
+                self.active_ssh = Some(sess);
+                ssh_already_open = true;
+            }
+        }
+
+        let mut need_fresh_boot_wait = false;
+        if !ssh_already_open {
+            log_info("Tahap 2: Menjalankan Web Auth & Aktivasi SSH (TR-369 RCE)...");
+            if self.config.web_pwd.is_empty() {
+                if let Ok(pwd) = prompt_line("[?] Masukkan Password Web Admin: ") {
+                    self.config.web_pwd = pwd;
+                }
+            }
+            let mut client = WebCgiClient::new(
+                &self.config.modem_ip,
+                &self.config.web_user,
+                &self.config.web_pwd,
+            );
+            match client.login() {
+                Ok(_) => {
+                    self.config.is_web_authenticated = true;
+                    let _ = self.config.save_config();
+                    log_info("Menginjeksi detector payload & hook aic_conf.json ke modem...");
+                    if let Err(e) = client.deploy_detector(&pubkey) {
+                        log_error(&format!("Gagal saat proses exploit TR-369: {}", e));
+                        return;
+                    }
+                    log_success("Detector dan hook aic_conf.json berhasil terpasang di modem!");
+                    self.web_client = Some(client);
+                }
+                Err(e) => {
+                    log_error(&format!("Gagal saat proses exploit (Login Web CGI): {}", e));
+                    return;
+                }
+            }
+        }
+
+        log_info("Tahap 3: Menyalakan background HTTP Server & TCP Receiver di PC...");
         self.menu_start_servers();
-        let Some(ssh) = self.ensure_active_ssh(false, 240) else {
-            log_error("Gagal menghubungkan sesi SSH untuk Full Pipeline.");
+
+        if !ssh_already_open {
+            let reb_ans =
+                prompt_line("[?] Kirim sinyal reboot otomatis ke modem sekarang? [Y/n]: ")
+                    .unwrap_or_default();
+            let do_auto_reboot = !matches!(reb_ans.trim().to_lowercase().as_str(), "n" | "no");
+            if do_auto_reboot {
+                if let Some(ref client) = self.web_client {
+                    match client.reboot_modem() {
+                        Ok(true) => {
+                            log_success("Sinyal reboot berhasil dikirimkan ke modem!");
+                            log_info("Memantau siklus restart hardware pada port (443, 80, 53, 2222)...");
+                            let _ = wait_for_shutdown(
+                                &self.config.modem_ip,
+                                &DEFAULT_CHECK_PORTS,
+                                Duration::from_secs(35),
+                            );
+                            need_fresh_boot_wait = true;
+                        }
+                        _ => {
+                            log_warn("Gagal mengirim sinyal reboot otomatis. Silakan reboot modem secara manual.");
+                            let _ = prompt_line("Tekan [Enter] jika Anda sudah menekan reboot...");
+                        }
+                    }
+                }
+            } else {
+                let _ = prompt_line(
+                    "Silakan reboot modem secara manual lalu tekan [Enter] untuk melanjutkan...",
+                );
+            }
+        }
+
+        log_info("Tahap 4: Mengaktifkan SSH Sniper di PC...");
+        let Some(ssh) = self.ensure_active_ssh(need_fresh_boot_wait, 240) else {
+            log_error("Gagal mengunci koneksi SSH. Silakan ulangi.");
             return;
         };
+
+        log_info("Tahap 5 & 6: Menjalankan proses backup 52 partisi eMMC & Verifikasi MD5...");
         self.menu_dump_ssh();
-        log_info("Menjalankan ekstraksi kredensial live via SSH...");
+
+        log_info("Tahap 7: Mengekstrak Data Identitas & Kredensial Pabrik...");
         match FactoryMIMExtractor::extract_live_credentials(&ssh, &self.config) {
             Ok((_, report, path)) => {
                 println!("\n{}", report);
@@ -211,11 +363,55 @@ impl DbaiNokiaApp {
             }
             Err(e) => log_error(&format!("Gagal ekstraksi kredensial live: {}", e)),
         }
-        log_success("Full Pipeline selesai dijalankan!");
+        log_success("SELURUH ALUR PIPELINE BERHASIL DISELESAIKAN!");
     }
 
     pub fn menu_root_exploit(&mut self) {
-        self.menu_web_login_and_reboot(false);
+        println!("\n--- [ AKTIVASI SSH (ROOT) VIA INJEKSI TR-369 ] ---");
+        let pubkey = match SSHKeyManager::ensure_keys(&self.config.key_name) {
+            Ok((_, pub_str)) => pub_str,
+            Err(e) => {
+                log_error(&format!("Gagal menyiapkan kunci SSH: {}", e));
+                return;
+            }
+        };
+        if self.config.web_pwd.is_empty() {
+            if let Ok(pwd) = prompt_line("[?] Masukkan Password Web Admin: ") {
+                self.config.web_pwd = pwd;
+            }
+        }
+        let mut client = WebCgiClient::new(
+            &self.config.modem_ip,
+            &self.config.web_user,
+            &self.config.web_pwd,
+        );
+        log_info(&format!("Menghubungi Web UI Nokia ({})...", client.base_url));
+        match client.login() {
+            Ok(token) => {
+                self.config.is_web_authenticated = true;
+                let _ = self.config.save_config();
+                let preview: String = token.chars().take(14).collect();
+                log_success(&format!("Login Web UI Berhasil! Token: {}...", preview));
+                log_info("Menyiapkan /configs/nonpersistant & menginjeksi detector payload via TR-369...");
+                match client.deploy_detector(&pubkey) {
+                    Ok(()) => {
+                        log_success("Aktivasi SSH root (detector & hook aic_conf.json) berhasil terpasang di modem!");
+                        self.web_client = Some(client);
+                        let reb = prompt_line(
+                            "[?] Kirim sinyal reboot resmi sekarang untuk mengaktifkan SSH? [Y/n]: ",
+                        )
+                        .unwrap_or_default();
+                        if !matches!(reb.trim().to_lowercase().as_str(), "n" | "no") {
+                            self.menu_reboot();
+                        }
+                    }
+                    Err(e) => {
+                        log_error(&format!("Gagal mengaktifkan SSH via TR-369: {}", e));
+                    }
+                }
+            }
+            Err(e) => log_error(&format!("Gagal mengaktifkan SSH: {}", e)),
+        }
     }
 
     pub fn menu_reboot(&mut self) {
@@ -325,6 +521,48 @@ impl DbaiNokiaApp {
                     return Some(existing.clone());
                 }
             }
+            if !sniper::is_any_port_open(
+                &self.config.modem_ip,
+                &self.config.ssh_ports,
+                Duration::from_millis(400),
+            ) && sniper::is_any_port_open(&self.config.modem_ip, &[80], Duration::from_millis(400))
+            {
+                log_warn("Port SSH [2222, 22] di modem saat ini TERTUTUP, namun Web Admin (Port 80) aktif!");
+                println!("  [1] Kirim Sinyal Reboot Resmi & Injeksi SSH Root + Mulai SSH Sniper (Rekomendasi)");
+                println!("  [2] Masuk ke mode SSH Sniper sekarang (jika modem sedang Anda reboot manual)");
+                println!("  [0] Batal / Kembali ke Menu Utama");
+                let act = prompt_line("Pilih tindakan [1/2/0, Enter = 1]: ").unwrap_or_default();
+                match act.trim() {
+                    "0" => return None,
+                    "2" => {}
+                    _ => {
+                        if let Ok((_, pubkey)) = SSHKeyManager::ensure_keys(&self.config.key_name) {
+                            if self.config.web_pwd.is_empty() {
+                                if let Ok(pwd) = prompt_line("[?] Masukkan Password Web Admin: ") {
+                                    self.config.web_pwd = pwd;
+                                }
+                            }
+                            let mut client = WebCgiClient::new(
+                                &self.config.modem_ip,
+                                &self.config.web_user,
+                                &self.config.web_pwd,
+                            );
+                            if client.login().is_ok() {
+                                let _ = client.deploy_detector(&pubkey);
+                                if let Ok(true) = client.reboot_modem() {
+                                    log_success("Sinyal reboot resmi berhasil dikirim! Memantau siklus restart...");
+                                    let _ = wait_for_shutdown(
+                                        &self.config.modem_ip,
+                                        &DEFAULT_CHECK_PORTS,
+                                        Duration::from_secs(35),
+                                    );
+                                }
+                                self.web_client = Some(client);
+                            }
+                        }
+                    }
+                }
+            }
         }
         log_info(&format!(
             "Menghubungi port SSH {:?} di {} (fresh_boot={})...",
@@ -403,10 +641,19 @@ impl DbaiNokiaApp {
                     "Sisa ruang disk hanya {:.2} GiB (< {:.1} GiB yang disarankan untuk full dump eMMC)!",
                     free_gb, MIN_FREE_DISK_GB
                 ));
+                let cont = prompt_line("[?] Tetap paksa lanjutkan dump sekarang? [y/N]: ")
+                    .unwrap_or_default();
+                if !matches!(cont.trim().to_lowercase().as_str(), "y" | "yes" | "ya") {
+                    log_info("Proses dump dibatalkan untuk mencegah kerusakan file.");
+                    return;
+                }
             }
         }
         if self.servers.is_none() {
             self.menu_start_servers();
+        }
+        if let Some(ref srv) = self.servers {
+            srv.tcp.reset_done();
         }
         let Some(ssh) = self.ensure_active_ssh(false, 25) else {
             return;
@@ -414,6 +661,9 @@ impl DbaiNokiaApp {
         log_info("Mengambil identitas & kesehatan eMMC serta menjalankan streaming 52 partisi...");
         match DumperEngine::execute_dump_ssh(&ssh, &self.config) {
             Ok(()) => {
+                if let Some(ref srv) = self.servers {
+                    let _ = srv.tcp.wait_until_done(Duration::from_secs(10));
+                }
                 log_success("Full dump partisi eMMC selesai! Menjalankan verifikasi MD5 otomatis...");
                 self.menu_verify_md5();
             }
@@ -428,12 +678,20 @@ impl DbaiNokiaApp {
         if self.servers.is_none() {
             self.menu_start_servers();
         }
+        if let Some(ref srv) = self.servers {
+            srv.tcp.reset_done();
+        }
         let Some(ssh) = self.ensure_active_ssh(false, 25) else {
             return;
         };
         log_info("Mengarsipkan /data (user_data_dir.tar.gz) & /rom/etc (rom_etc_dir.tar.gz)...");
         match DumperEngine::execute_tarball_ssh(&ssh, &self.config) {
-            Ok(()) => log_success("Backup tarball selesai dikirim ke folder output!"),
+            Ok(()) => {
+                if let Some(ref srv) = self.servers {
+                    let _ = srv.tcp.wait_until_done(Duration::from_secs(10));
+                }
+                log_success("Backup tarball selesai dikirim ke folder output!");
+            }
             Err(e) => log_error(&format!("Gagal menjalankan backup tarball: {}", e)),
         }
     }
@@ -494,6 +752,7 @@ impl DbaiNokiaApp {
     }
 
     pub fn menu_revoke_root(&mut self) {
+        println!("\n--- [ UNROOT / REVOKE AKSES ROOT ] ---");
         let ans = prompt_line(
             "[?] Anda yakin ingin menghapus akses root dan membersihkan artefak di modem? [y/N]: ",
         )
@@ -505,18 +764,54 @@ impl DbaiNokiaApp {
 
         let mut cleaned = false;
         if let Some(ssh) = self.ensure_active_ssh(false, 10) {
-            log_info("Menjalankan pembersihan unroot via SSH...");
+            log_info("Mengeksekusi pembersihan hook via sesi SSH aktif...");
             match ssh.revoke_root() {
                 Ok(()) => {
                     log_success(
-                        "Akses root dan seluruh artefak toolkit berhasil dibersihkan dari modem!",
+                        "File hook root di /configs berhasil dibersihkan via SSH!",
                     );
                     cleaned = true;
                 }
-                Err(e) => log_error(&format!("Gagal membersihkan artefak via SSH: {}", e)),
+                Err(e) => {
+                    log_warn(&format!(
+                        "Gagal via SSH: {}. Mencoba jalur alternatif via Web API...",
+                        e
+                    ));
+                }
             }
         } else {
-            log_error("Koneksi SSH tidak dapat dibuat untuk menjalankan revoke_root.");
+            log_warn("Sesi SSH tidak aktif. Mencoba jalur alternatif via Web Management API...");
+        }
+
+        if !cleaned {
+            log_info("Mengeksekusi pembersihan hook via Web Management API...");
+            if self.config.web_pwd.is_empty() {
+                if let Ok(pwd) = prompt_line("[?] Masukkan Password Web Admin: ") {
+                    self.config.web_pwd = pwd;
+                }
+            }
+            let mut client = WebCgiClient::new(
+                &self.config.modem_ip,
+                &self.config.web_user,
+                &self.config.web_pwd,
+            );
+            match client.login() {
+                Ok(_) => match client.execute_rce(sniper::UNROOT_CLEANUP_CMD, 1.0) {
+                    Ok(_) => {
+                        log_success(
+                            "File hook root di /configs berhasil dibersihkan via Web Management API!",
+                        );
+                        cleaned = true;
+                        self.web_client = Some(client);
+                    }
+                    Err(e) => {
+                        log_error(&format!("Gagal mencabut akses root via Web API: {}", e));
+                    }
+                },
+                Err(e) => {
+                    log_error(&format!("Gagal login Web API untuk unroot: {}", e));
+                }
+            }
         }
 
         if cleaned {
@@ -615,6 +910,7 @@ impl DbaiNokiaApp {
                         &label,
                         None,
                         &std::collections::BTreeMap::new(),
+                        Some(&self.config.web_pwd),
                     );
                     println!("\n{}", report);
                     match FactoryMIMExtractor::save_credentials_report(
@@ -741,7 +1037,7 @@ impl DbaiNokiaApp {
             self.print_header();
             println!("\n  [a] Full Pipeline (Auto: Keys -> Root -> Reboot -> Servers -> Dump -> MD5 -> Creds)");
             println!("  [1] Periksa / Generate Pasangan SSH Key (RSA 2048-bit)");
-            println!("  [2] Uji Login Web CGI Nokia (Iterated SHA-256)");
+            println!("  [2] Aktivasi SSH (ROOT) via Injeksi TR-369");
             println!("  [3] Trigger Reboot Modem (/reboot_web_app.cgi atau SSH)");
             println!("  [4] Mulai SSH Sniper & Buka Terminal Interaktif");
             println!("  [5] Jalankan Background Server (HTTP:{} + TCP:{})", self.config.http_port, self.config.tcp_port);

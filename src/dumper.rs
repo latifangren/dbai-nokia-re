@@ -279,15 +279,56 @@ echo "size=$sz"
         Ok(report)
     }
 
-    /// Memperbarui bagian kesehatan eMMC pada `non-userarea/info_eMMC.txt` dari byte offset 267-269 `ext_csd.bin` (`SPEC.md` §5.3 #4).
+    /// Mem-parsing teks keluaran `mmc extcsd read /dev/mmcblk0` (`non-userarea/ext_csd.txt`) jika `ext_csd.bin` tidak tersedia (`SPEC.md` §5.3 #4).
+    pub fn parse_ext_csd_text_health(text: &str) -> Option<(String, String, String)> {
+        let mut life_a = None;
+        let mut life_b = None;
+        let mut pre_eol = None;
+
+        for line in text.lines() {
+            let trimmed = line.trim();
+            if trimmed.contains("Life Time Estimation A") {
+                if let Some((_, val)) = trimmed.split_once(':') {
+                    life_a = Some(val.trim().to_string());
+                }
+            } else if trimmed.contains("Life Time Estimation B") {
+                if let Some((_, val)) = trimmed.split_once(':') {
+                    life_b = Some(val.trim().to_string());
+                }
+            } else if trimmed.contains("Pre EOL information") {
+                if let Some((_, val)) = trimmed.split_once(':') {
+                    pre_eol = Some(val.trim().to_string());
+                }
+            }
+        }
+
+        if life_a.is_none() && life_b.is_none() && pre_eol.is_none() {
+            return None;
+        }
+        Some((
+            life_a.unwrap_or_else(|| "N/A".to_string()),
+            life_b.unwrap_or_else(|| "N/A".to_string()),
+            pre_eol.unwrap_or_else(|| "N/A".to_string()),
+        ))
+    }
+
+    /// Memperbarui bagian kesehatan eMMC pada `non-userarea/info_eMMC.txt` dari byte offset 267-269 `ext_csd.bin` atau `ext_csd.txt` (`SPEC.md` §5.3 #4).
     pub fn update_health_from_extcsd(backup_dir: &Path) -> io::Result<Option<String>> {
         let non_user_dir = backup_dir.join("non-userarea");
         let ext_bin_path = non_user_dir.join("ext_csd.bin");
-        if !ext_bin_path.exists() {
-            return Ok(None);
-        }
-        let raw = fs::read(&ext_bin_path)?;
-        let Some((life_a, life_b, pre_eol)) = parse_ext_csd_health(&raw) else {
+        let ext_txt_path = non_user_dir.join("ext_csd.txt");
+
+        let parsed = if ext_bin_path.exists() {
+            let raw = fs::read(&ext_bin_path)?;
+            parse_ext_csd_health(&raw)
+        } else if ext_txt_path.exists() {
+            let txt = fs::read_to_string(&ext_txt_path)?;
+            Self::parse_ext_csd_text_health(&txt)
+        } else {
+            None
+        };
+
+        let Some((life_a, life_b, pre_eol)) = parsed else {
             return Ok(None);
         };
 
@@ -441,5 +482,32 @@ mod tests {
             assert!(script.contains("exit 1"));
             assert!(!script.contains("PARTNAME="));
         }
+    }
+
+    #[test]
+    fn test_update_health_from_extcsd_text_fallback() {
+        let temp_dir = std::env::temp_dir().join(format!(
+            "test_extcsd_txt_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
+        let non_user = temp_dir.join("non-userarea");
+        fs::create_dir_all(&non_user).unwrap();
+
+        let ext_txt = "eMMC Life Time Estimation A [EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_A]: 0x01\n\
+                       eMMC Life Time Estimation B [EXT_CSD_DEVICE_LIFE_TIME_EST_TYP_B]: 0x02\n\
+                       eMMC Pre EOL information [EXT_CSD_PRE_EOL_INFO]: 0x01\n";
+        fs::write(non_user.join("ext_csd.txt"), ext_txt).unwrap();
+        fs::write(non_user.join("info_eMMC.txt"), "Device: eMMC\n").unwrap();
+
+        let res = DumperEngine::update_health_from_extcsd(&temp_dir).unwrap();
+        assert!(res.is_some());
+        let content = fs::read_to_string(non_user.join("info_eMMC.txt")).unwrap();
+        assert!(content.contains("0x01"));
+        assert!(content.contains("0x02"));
+
+        let _ = fs::remove_dir_all(&temp_dir);
     }
 }

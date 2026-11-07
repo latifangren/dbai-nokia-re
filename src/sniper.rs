@@ -201,6 +201,7 @@ impl SshSession {
                             std::thread::sleep(Duration::from_millis(400));
                             continue;
                         }
+                        let _ = candidate.run_sniper_hardening(eff_pwd);
                         let _ = candidate.install_guardian();
                         return Ok((candidate, uptime));
                     }
@@ -419,6 +420,22 @@ impl SshSession {
         Ok(status.code().unwrap_or(0))
     }
 
+    /// Menjalankan perintah hardening SSH awal saat sniper berhasil mengunci sesi (`SPEC.md` §5.2 #2 `mod_consts[469..472]`).
+    pub fn run_sniper_hardening(&self, ssh_pwd: &str) -> Result<(), String> {
+        let pwd = if ssh_pwd.trim().is_empty() {
+            DEFAULT_SSH_ROOT_PWD
+        } else {
+            ssh_pwd.trim()
+        };
+        let pwd_safe = pwd.replace('\'', "'\\''");
+        let cmd = format!(
+            "export PATH=/bin:/usr/bin:/sbin:/usr/sbin; echo 'root:{}' | chpasswd; chmod 700 /root; mkdir -p /root/.ssh; cat /configs/nonpersistant/fastmile_key > /root/.ssh/authorized_keys 2>/dev/null; chmod 600 /root/.ssh/authorized_keys 2>/dev/null; chmod 700 /root/.ssh; iptables -I INPUT -p tcp --dport {} -j ACCEPT; /usr/sbin/sshd -p {} -o PermitRootLogin=yes -o PasswordAuthentication=yes -o PubkeyAuthentication=yes -o StrictModes=no -o AuthorizedKeysFile=/configs/nonpersistant/fastmile_key 2>/dev/null &",
+            pwd_safe, self.port, self.port
+        );
+        let _ = self.exec_command(&cmd, 5)?;
+        Ok(())
+    }
+
     /// Memasang watchdog in-memory `/tmp/ssh_keeper.sh` di latar belakang (`SPEC.md` §5.2 #3 & §6 S4).
     pub fn install_guardian(&self) -> Result<(), String> {
         let cmd = r#"if ! pgrep -f "ssh_keeper.sh" >/dev/null 2>&1; then cat << 'EOF' > /tmp/ssh_keeper.sh
@@ -426,7 +443,7 @@ impl SshSession {
 while true; do
   iptables -C INPUT -p tcp --dport 2222 -j ACCEPT 2>/dev/null || iptables -I INPUT 1 -p tcp --dport 2222 -j ACCEPT 2>/dev/null
   if ! pgrep -f "sshd.*2222" >/dev/null 2>&1; then
-    /usr/sbin/sshd -p 2222 2>/dev/null
+    /usr/sbin/sshd -p 2222 -o PermitRootLogin=yes -o PasswordAuthentication=yes -o PubkeyAuthentication=yes -o StrictModes=no -o AuthorizedKeysFile=/configs/nonpersistant/fastmile_key 2>/dev/null &
   fi
   sleep 2
 done

