@@ -7,8 +7,6 @@
 **Tanggal Analisis & Audit:** 2026-11-07  
 **Metode:** Analisis statis menyeluruh menggunakan REA 6.8.0, Ghidra 12.1.4, `objdump` (disassembly `pei-x86-64`), dekoder tabel arsip Nuitka `KAX`, dekoder blob konstanta Nuitka `__constants.bin` (`0x18098b820`), serta inspeksi simbol/rodata ELF64 AArch64 (`bin\test_decrypt_node`). Biner target tidak pernah dieksekusi dan tidak ada panggilan jaringan yang dilakukan.
 
-> **Catatan Keamanan & Etika Dokumentasi.** Dokumen ini menjelaskan arsitektur, protokol, algoritma kriptografi, struktur data, dan mekanisme kerja secara fungsional untuk keperluan audit teknis, interoperabilitas, dan rekonstruksi *clean-room*. Dokumen ini sengaja tidak menyertakan skrip eksploitasi siap pakai (*weaponized payload*) secara *verbatim* dan tidak mencantumkan nilai *password* bawaan (*hardcoded plaintext password*) yang ditemukan di dalam biner.
-
 ---
 
 ## 0. Ringkasan Eksekutif & Daftar Koreksi Audit (Revisi v2)

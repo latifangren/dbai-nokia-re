@@ -25,7 +25,6 @@
 4. [Prasyarat & Cara Kompilasi / Menjalankan (How)](#4-prasyarat--cara-kompilasi--menjalankan-how)
 5. [Panduan Menu Interaktif CLI](#5-panduan-menu-interaktif-cli)
    - [Struktur Direktori Hasil Backup (`image_backup/`)](#struktur-direktori-hasil-backup-image_backup)
-6. [Catatan Keamanan & Etika](#6-catatan-keamanan--etika)
 
 ---
 
@@ -367,21 +366,6 @@ image_backup/
 ├── swr.img                             # Partisi software staging (dinamis / WAJAR-RW)
 └── ... (seluruh 50 partisi eMMC user-area lainnya)
 ```
-
----
-
-## 6. Catatan Keamanan & Etika
-
-Dokumentasi dan kode sumber dalam repositori ini disusun dengan mematuhi prinsip-prinsip etika riset keamanan siber dan hukum yang berlaku:
-
-1. **Metodologi Clean-Room Reverse Engineering:**  
-   Proyek ini dibangun murni melalui teknik *clean-room engineering* berdasarkan analisis statis terhadap artefak biner publik dan observasi perilaku protokol jaringan pada lapisan aplikasi. Tidak ada kode sumber proprietary milik Nokia Corporation atau pihak ketiga yang disalin atau didistribusikan secara tidak sah.
-2. **Tujuan Interoperabilitas & Preservasi Hardware:**  
-   Toolkit ini dikembangkan untuk tujuan interoperabilitas sistem, pemeliharaan perangkat, pencadangan mandiri (*disaster recovery*), serta audit keamanan defensif bagi pemilik sah perangkat keras **Nokia FastMile 5G Gateway 2**.
-3. **Bukan Weaponized Exploit:**  
-   Toolkit ini tidak dirancang sebagai alat perusak (*weaponized exploit*), tidak menyertakan skrip destruktif terhadap infrastruktur jaringan seluler publik, dan tidak menyertakan kata sandi bawaan secara sembarangan.
-4. **Tanggung Jawab Pengguna:**  
-   Pengguna bertanggung jawab penuh atas segala tindakan dan konfigurasi yang diterapkan pada perangkat keras miliknya sendiri. Pastikan Anda memiliki hak kepemilikan atau izin resmi sebelum menjalankan pengujian pada perangkat.
 
 ---
 *Dibuat untuk komunitas riset perangkat keras dan interoperabilitas jaringan.*
