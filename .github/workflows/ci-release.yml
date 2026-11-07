@@ -63,7 +63,7 @@ jobs:
 
       - name: Build release binary (Linux x86_64)
         run: |
-          cargo build --release --locked
+          cargo build --release
           cp target/release/dbai-nokia-rs dbai-nokia-linux-amd64
           chmod +x dbai-nokia-linux-amd64
           sha256sum dbai-nokia-linux-amd64 > dbai-nokia-linux-amd64.sha256
@@ -101,7 +101,7 @@ jobs:
         env:
           CARGO_TARGET_AARCH64_UNKNOWN_LINUX_GNU_LINKER: aarch64-linux-gnu-gcc
         run: |
-          cargo build --release --locked --target aarch64-unknown-linux-gnu
+          cargo build --release --target aarch64-unknown-linux-gnu
           cp target/aarch64-unknown-linux-gnu/release/dbai-nokia-rs dbai-nokia-linux-arm64
           chmod +x dbai-nokia-linux-arm64
           sha256sum dbai-nokia-linux-arm64 > dbai-nokia-linux-arm64.sha256
@@ -133,7 +133,7 @@ jobs:
       - name: Build release binary (Windows x86_64 Native)
         shell: pwsh
         run: |
-          cargo build --release --locked --target x86_64-pc-windows-msvc
+          cargo build --release --target x86_64-pc-windows-msvc
           Copy-Item "target/x86_64-pc-windows-msvc/release/dbai-nokia-rs.exe" "dbai-nokia-win64.exe"
           $hash = (Get-FileHash "dbai-nokia-win64.exe" -Algorithm SHA256).Hash.ToLower()
           "$hash  dbai-nokia-win64.exe" | Out-File -Encoding ascii "dbai-nokia-win64.exe.sha256"

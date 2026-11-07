@@ -5,7 +5,6 @@
 *.obj
 *.pdb
 *.d
-Cargo.lock
 
 # Python / cache artifacts
 __pycache__/
