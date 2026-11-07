@@ -1,0 +1,1012 @@
+{
+ "_meta": {
+  "provenance": {
+   "untrusted_content": true,
+   "source": "analysis_target"
+  }
+ },
+ "content": [
+  {
+   "type": "text",
+   "text": "{\"evidence_id\":\"ev_383aca5ba8650d44460ed537a3b19327111ec2af65e02fc728b7b84c0c649f16\",\"subject\":{\"name\":\"dbai-nokia-win64.exe\",\"digest\":{\"sha256\":\"ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da\"},\"local_path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"format\":\"pe\",\"architecture\":\"x86_64\"},\"provider\":{\"id\":\"rea-pe-imports\",\"name\":\"REA PE import parser\",\"version\":\"1\"},\"analysis_profile\":null,\"predicate_type\":\"rea.analysis\",\"operation\":\"inspect_pe_imports\",\"parameters\":{\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"max_file_bytes\":67108864,\"max_dlls\":256,\"max_functions\":8192},\"raw_result\":null,\"normalized_result\":{\"artifact\":{\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"sha256\":\"ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da\",\"bytes\":46329344},\"format\":\"pe32-plus\",\"machine\":34404,\"bits\":64,\"architecture\":\"amd64\",\"import_directory\":{\"rva\":46324872,\"size\":240,\"locations\":[{\"offset\":46319752,\"bytes\":240}]},\"delay_import_directory\":null,\"imports\":[{\"index\":0,\"name\":\"api-ms-win-crt-convert-l1-1-0.dll\",\"name_rva\":46328376,\"original_first_thunk_rva\":46325112,\"first_thunk_rva\":46325944,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319752,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"mbstowcs\",\"ordinal\":null,\"ilt_rva\":46325112,\"iat_rva\":46325944,\"thunk_hex\":\"2c2e3f8\"},{\"hint\":0,\"name\":\"wcstol\",\"ordinal\":null,\"ilt_rva\":46325120,\"iat_rva\":46325952,\"thunk_hex\":\"2c2e404\"}]},{\"index\":1,\"name\":\"api-ms-win-crt-filesystem-l1-1-0.dll\",\"name_rva\":46328410,\"original_first_thunk_rva\":46325136,\"first_thunk_rva\":46325968,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319772,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"_wrename\",\"ordinal\":null,\"ilt_rva\":46325136,\"iat_rva\":46325968,\"thunk_hex\":\"2c2e40e\"}]},{\"index\":2,\"name\":\"api-ms-win-crt-heap-l1-1-0.dll\",\"name_rva\":46328447,\"original_first_thunk_rva\":46325152,\"first_thunk_rva\":46325984,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319792,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"_set_new_mode\",\"ordinal\":null,\"ilt_rva\":46325152,\"iat_rva\":46325984,\"thunk_hex\":\"2c2e41a\"},{\"hint\":0,\"name\":\"free\",\"ordinal\":null,\"ilt_rva\":46325160,\"iat_rva\":46325992,\"thunk_hex\":\"2c2e42a\"},{\"hint\":0,\"name\":\"malloc\",\"ordinal\":null,\"ilt_rva\":46325168,\"iat_rva\":46326000,\"thunk_hex\":\"2c2e432\"}]},{\"index\":3,\"name\":\"api-ms-win-crt-private-l1-1-0.dll\",\"name_rva\":46328478,\"original_first_thunk_rva\":46325184,\"first_thunk_rva\":46326016,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319812,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"__C_specific_handler\",\"ordinal\":null,\"ilt_rva\":46325184,\"iat_rva\":46326016,\"thunk_hex\":\"2c2e43c\"},{\"hint\":0,\"name\":\"wcschr\",\"ordinal\":null,\"ilt_rva\":46325192,\"iat_rva\":46326024,\"thunk_hex\":\"2c2e454\"}]},{\"index\":4,\"name\":\"api-ms-win-crt-runtime-l1-1-0.dll\",\"name_rva\":46328512,\"original_first_thunk_rva\":46325208,\"first_thunk_rva\":46326040,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319832,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"__p___argc\",\"ordinal\":null,\"ilt_rva\":46325208,\"iat_rva\":46326040,\"thunk_hex\":\"2c2e45e\"},{\"hint\":0,\"name\":\"__p___wargv\",\"ordinal\":null,\"ilt_rva\":46325216,\"iat_rva\":46326048,\"thunk_hex\":\"2c2e46c\"},{\"hint\":0,\"name\":\"_cexit\",\"ordinal\":null,\"ilt_rva\":46325224,\"iat_rva\":46326056,\"thunk_hex\":\"2c2e47a\"},{\"hint\":0,\"name\":\"_configure_wide_argv\",\"ordinal\":null,\"ilt_rva\":46325232,\"iat_rva\":46326064,\"thunk_hex\":\"2c2e484\"},{\"hint\":0,\"name\":\"_crt_atexit\",\"ordinal\":null,\"ilt_rva\":46325240,\"iat_rva\":46326072,\"thunk_hex\":\"2c2e49c\"},{\"hint\":0,\"name\":\"_errno\",\"ordinal\":null,\"ilt_rva\":46325248,\"iat_rva\":46326080,\"thunk_hex\":\"2c2e4aa\"},{\"hint\":0,\"name\":\"_exit\",\"ordinal\":null,\"ilt_rva\":46325256,\"iat_rva\":46326088,\"thunk_hex\":\"2c2e4b4\"},{\"hint\":0,\"name\":\"_initialize_wide_environment\",\"ordinal\":null,\"ilt_rva\":46325264,\"iat_rva\":46326096,\"thunk_hex\":\"2c2e4bc\"},{\"hint\":0,\"name\":\"_initterm\",\"ordinal\":null,\"ilt_rva\":46325272,\"iat_rva\":46326104,\"thunk_hex\":\"2c2e4dc\"},{\"hint\":0,\"name\":\"_initterm_e\",\"ordinal\":null,\"ilt_rva\":46325280,\"iat_rva\":46326112,\"thunk_hex\":\"2c2e4e8\"},{\"hint\":0,\"name\":\"_set_app_type\",\"ordinal\":null,\"ilt_rva\":46325288,\"iat_rva\":46326120,\"thunk_hex\":\"2c2e4f6\"},{\"hint\":0,\"name\":\"_set_invalid_parameter_handler\",\"ordinal\":null,\"ilt_rva\":46325296,\"iat_rva\":46326128,\"thunk_hex\":\"2c2e506\"},{\"hint\":0,\"name\":\"abort\",\"ordinal\":null,\"ilt_rva\":46325304,\"iat_rva\":46326136,\"thunk_hex\":\"2c2e528\"},{\"hint\":0,\"name\":\"exit\",\"ordinal\":null,\"ilt_rva\":46325312,\"iat_rva\":46326144,\"thunk_hex\":\"2c2e530\"},{\"hint\":0,\"name\":\"signal\",\"ordinal\":null,\"ilt_rva\":46325320,\"iat_rva\":46326152,\"thunk_hex\":\"2c2e538\"}]},{\"index\":5,\"name\":\"api-ms-win-crt-stdio-l1-1-0.dll\",\"name_rva\":46328546,\"original_first_thunk_rva\":46325336,\"first_thunk_rva\":46326168,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319852,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"__acrt_iob_func\",\"ordinal\":null,\"ilt_rva\":46325336,\"iat_rva\":46326168,\"thunk_hex\":\"2c2e542\"},{\"hint\":0,\"name\":\"__p__commode\",\"ordinal\":null,\"ilt_rva\":46325344,\"iat_rva\":46326176,\"thunk_hex\":\"2c2e554\"},{\"hint\":0,\"name\":\"__p__fmode\",\"ordinal\":null,\"ilt_rva\":46325352,\"iat_rva\":46326184,\"thunk_hex\":\"2c2e564\"},{\"hint\":0,\"name\":\"__stdio_common_vfprintf\",\"ordinal\":null,\"ilt_rva\":46325360,\"iat_rva\":46326192,\"thunk_hex\":\"2c2e572\"},{\"hint\":0,\"name\":\"__stdio_common_vsprintf\",\"ordinal\":null,\"ilt_rva\":46325368,\"iat_rva\":46326200,\"thunk_hex\":\"2c2e58c\"},{\"hint\":0,\"name\":\"__stdio_common_vswprintf\",\"ordinal\":null,\"ilt_rva\":46325376,\"iat_rva\":46326208,\"thunk_hex\":\"2c2e5a6\"},{\"hint\":0,\"name\":\"fwrite\",\"ordinal\":null,\"ilt_rva\":46325384,\"iat_rva\":46326216,\"thunk_hex\":\"2c2e5c2\"},{\"hint\":0,\"name\":\"puts\",\"ordinal\":null,\"ilt_rva\":46325392,\"iat_rva\":46326224,\"thunk_hex\":\"2c2e5cc\"}]},{\"index\":6,\"name\":\"api-ms-win-crt-string-l1-1-0.dll\",\"name_rva\":46328578,\"original_first_thunk_rva\":46325408,\"first_thunk_rva\":46326240,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319872,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"_wcsdup\",\"ordinal\":null,\"ilt_rva\":46325408,\"iat_rva\":46326240,\"thunk_hex\":\"2c2e5d4\"},{\"hint\":0,\"name\":\"_wcsicmp\",\"ordinal\":null,\"ilt_rva\":46325416,\"iat_rva\":46326248,\"thunk_hex\":\"2c2e5de\"},{\"hint\":0,\"name\":\"iswctype\",\"ordinal\":null,\"ilt_rva\":46325424,\"iat_rva\":46326256,\"thunk_hex\":\"2c2e5ea\"},{\"hint\":0,\"name\":\"strcat\",\"ordinal\":null,\"ilt_rva\":46325432,\"iat_rva\":46326264,\"thunk_hex\":\"2c2e5f6\"},{\"hint\":0,\"name\":\"strcpy\",\"ordinal\":null,\"ilt_rva\":46325440,\"iat_rva\":46326272,\"thunk_hex\":\"2c2e600\"},{\"hint\":0,\"name\":\"strncpy\",\"ordinal\":null,\"ilt_rva\":46325448,\"iat_rva\":46326280,\"thunk_hex\":\"2c2e60a\"},{\"hint\":0,\"name\":\"wcscmp\",\"ordinal\":null,\"ilt_rva\":46325456,\"iat_rva\":46326288,\"thunk_hex\":\"2c2e614\"},{\"hint\":0,\"name\":\"wcslen\",\"ordinal\":null,\"ilt_rva\":46325464,\"iat_rva\":46326296,\"thunk_hex\":\"2c2e61e\"},{\"hint\":0,\"name\":\"wcsncmp\",\"ordinal\":null,\"ilt_rva\":46325472,\"iat_rva\":46326304,\"thunk_hex\":\"2c2e628\"}]},{\"index\":7,\"name\":\"KERNEL32.dll\",\"name_rva\":46328611,\"original_first_thunk_rva\":46325488,\"first_thunk_rva\":46326320,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319892,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"AddDllDirectory\",\"ordinal\":null,\"ilt_rva\":46325488,\"iat_rva\":46326320,\"thunk_hex\":\"2c2e632\"},{\"hint\":0,\"name\":\"CloseHandle\",\"ordinal\":null,\"ilt_rva\":46325496,\"iat_rva\":46326328,\"thunk_hex\":\"2c2e644\"},{\"hint\":0,\"name\":\"CopyFileW\",\"ordinal\":null,\"ilt_rva\":46325504,\"iat_rva\":46326336,\"thunk_hex\":\"2c2e652\"},{\"hint\":0,\"name\":\"CreateDirectoryW\",\"ordinal\":null,\"ilt_rva\":46325512,\"iat_rva\":46326344,\"thunk_hex\":\"2c2e65e\"},{\"hint\":0,\"name\":\"CreateFileMappingW\",\"ordinal\":null,\"ilt_rva\":46325520,\"iat_rva\":46326352,\"thunk_hex\":\"2c2e672\"},{\"hint\":0,\"name\":\"CreateFileW\",\"ordinal\":null,\"ilt_rva\":46325528,\"iat_rva\":46326360,\"thunk_hex\":\"2c2e688\"},{\"hint\":0,\"name\":\"CreateProcessW\",\"ordinal\":null,\"ilt_rva\":46325536,\"iat_rva\":46326368,\"thunk_hex\":\"2c2e696\"},{\"hint\":0,\"name\":\"DeleteCriticalSection\",\"ordinal\":null,\"ilt_rva\":46325544,\"iat_rva\":46326376,\"thunk_hex\":\"2c2e6a8\"},{\"hint\":0,\"name\":\"DeleteFileW\",\"ordinal\":null,\"ilt_rva\":46325552,\"iat_rva\":46326384,\"thunk_hex\":\"2c2e6c0\"},{\"hint\":0,\"name\":\"EnterCriticalSection\",\"ordinal\":null,\"ilt_rva\":46325560,\"iat_rva\":46326392,\"thunk_hex\":\"2c2e6ce\"},{\"hint\":0,\"name\":\"FormatMessageA\",\"ordinal\":null,\"ilt_rva\":46325568,\"iat_rva\":46326400,\"thunk_hex\":\"2c2e6e6\"},{\"hint\":0,\"name\":\"GetCommandLineW\",\"ordinal\":null,\"ilt_rva\":46325576,\"iat_rva\":46326408,\"thunk_hex\":\"2c2e6f8\"},{\"hint\":0,\"name\":\"GetCurrentProcessId\",\"ordinal\":null,\"ilt_rva\":46325584,\"iat_rva\":46326416,\"thunk_hex\":\"2c2e70a\"},{\"hint\":0,\"name\":\"GetEnvironmentVariableW\",\"ordinal\":null,\"ilt_rva\":46325592,\"iat_rva\":46326424,\"thunk_hex\":\"2c2e720\"},{\"hint\":0,\"name\":\"GetExitCodeProcess\",\"ordinal\":null,\"ilt_rva\":46325600,\"iat_rva\":46326432,\"thunk_hex\":\"2c2e73a\"},{\"hint\":0,\"name\":\"GetFileAttributesW\",\"ordinal\":null,\"ilt_rva\":46325608,\"iat_rva\":46326440,\"thunk_hex\":\"2c2e750\"},{\"hint\":0,\"name\":\"GetFileSize\",\"ordinal\":null,\"ilt_rva\":46325616,\"iat_rva\":46326448,\"thunk_hex\":\"2c2e766\"},{\"hint\":0,\"name\":\"GetFullPathNameW\",\"ordinal\":null,\"ilt_rva\":46325624,\"iat_rva\":46326456,\"thunk_hex\":\"2c2e774\"},{\"hint\":0,\"name\":\"GetLastError\",\"ordinal\":null,\"ilt_rva\":46325632,\"iat_rva\":46326464,\"thunk_hex\":\"2c2e788\"},{\"hint\":0,\"name\":\"GetModuleFileNameW\",\"ordinal\":null,\"ilt_rva\":46325640,\"iat_rva\":46326472,\"thunk_hex\":\"2c2e798\"},{\"hint\":0,\"name\":\"GetModuleHandleA\",\"ordinal\":null,\"ilt_rva\":46325648,\"iat_rva\":46326480,\"thunk_hex\":\"2c2e7ae\"},{\"hint\":0,\"name\":\"GetModuleHandleExA\",\"ordinal\":null,\"ilt_rva\":46325656,\"iat_rva\":46326488,\"thunk_hex\":\"2c2e7c2\"},{\"hint\":0,\"name\":\"GetProcAddress\",\"ordinal\":null,\"ilt_rva\":46325664,\"iat_rva\":46326496,\"thunk_hex\":\"2c2e7d8\"},{\"hint\":0,\"name\":\"GetShortPathNameW\",\"ordinal\":null,\"ilt_rva\":46325672,\"iat_rva\":46326504,\"thunk_hex\":\"2c2e7ea\"},{\"hint\":0,\"name\":\"GetStdHandle\",\"ordinal\":null,\"ilt_rva\":46325680,\"iat_rva\":46326512,\"thunk_hex\":\"2c2e7fe\"},{\"hint\":0,\"name\":\"GetSystemTimeAsFileTime\",\"ordinal\":null,\"ilt_rva\":46325688,\"iat_rva\":46326520,\"thunk_hex\":\"2c2e80e\"},{\"hint\":0,\"name\":\"GetTempPathW\",\"ordinal\":null,\"ilt_rva\":46325696,\"iat_rva\":46326528,\"thunk_hex\":\"2c2e828\"},{\"hint\":0,\"name\":\"InitializeCriticalSection\",\"ordinal\":null,\"ilt_rva\":46325704,\"iat_rva\":46326536,\"thunk_hex\":\"2c2e838\"},{\"hint\":0,\"name\":\"K32GetModuleFileNameExW\",\"ordinal\":null,\"ilt_rva\":46325712,\"iat_rva\":46326544,\"thunk_hex\":\"2c2e854\"},{\"hint\":0,\"name\":\"LeaveCriticalSection\",\"ordinal\":null,\"ilt_rva\":46325720,\"iat_rva\":46326552,\"thunk_hex\":\"2c2e86e\"},{\"hint\":0,\"name\":\"LoadLibraryExW\",\"ordinal\":null,\"ilt_rva\":46325728,\"iat_rva\":46326560,\"thunk_hex\":\"2c2e886\"},{\"hint\":0,\"name\":\"MapViewOfFile\",\"ordinal\":null,\"ilt_rva\":46325736,\"iat_rva\":46326568,\"thunk_hex\":\"2c2e898\"},{\"hint\":0,\"name\":\"OpenProcess\",\"ordinal\":null,\"ilt_rva\":46325744,\"iat_rva\":46326576,\"thunk_hex\":\"2c2e8a8\"},{\"hint\":0,\"name\":\"QueryPerformanceCounter\",\"ordinal\":null,\"ilt_rva\":46325752,\"iat_rva\":46326584,\"thunk_hex\":\"2c2e8b6\"},{\"hint\":0,\"name\":\"ReadFile\",\"ordinal\":null,\"ilt_rva\":46325760,\"iat_rva\":46326592,\"thunk_hex\":\"2c2e8d0\"},{\"hint\":0,\"name\":\"SetConsoleCtrlHandler\",\"ordinal\":null,\"ilt_rva\":46325768,\"iat_rva\":46326600,\"thunk_hex\":\"2c2e8dc\"},{\"hint\":0,\"name\":\"SetDllDirectoryW\",\"ordinal\":null,\"ilt_rva\":46325776,\"iat_rva\":46326608,\"thunk_hex\":\"2c2e8f4\"},{\"hint\":0,\"name\":\"SetEnvironmentVariableW\",\"ordinal\":null,\"ilt_rva\":46325784,\"iat_rva\":46326616,\"thunk_hex\":\"2c2e908\"},{\"hint\":0,\"name\":\"SetUnhandledExceptionFilter\",\"ordinal\":null,\"ilt_rva\":46325792,\"iat_rva\":46326624,\"thunk_hex\":\"2c2e922\"},{\"hint\":0,\"name\":\"Sleep\",\"ordinal\":null,\"ilt_rva\":46325800,\"iat_rva\":46326632,\"thunk_hex\":\"2c2e940\"},{\"hint\":0,\"name\":\"TerminateProcess\",\"ordinal\":null,\"ilt_rva\":46325808,\"iat_rva\":46326640,\"thunk_hex\":\"2c2e948\"},{\"hint\":0,\"name\":\"TlsGetValue\",\"ordinal\":null,\"ilt_rva\":46325816,\"iat_rva\":46326648,\"thunk_hex\":\"2c2e95c\"},{\"hint\":0,\"name\":\"UnmapViewOfFile\",\"ordinal\":null,\"ilt_rva\":46325824,\"iat_rva\":46326656,\"thunk_hex\":\"2c2e96a\"},{\"hint\":0,\"name\":\"VirtualProtect\",\"ordinal\":null,\"ilt_rva\":46325832,\"iat_rva\":46326664,\"thunk_hex\":\"2c2e97c\"},{\"hint\":0,\"name\":\"VirtualQuery\",\"ordinal\":null,\"ilt_rva\":46325840,\"iat_rva\":46326672,\"thunk_hex\":\"2c2e98e\"},{\"hint\":0,\"name\":\"WaitForSingleObject\",\"ordinal\":null,\"ilt_rva\":46325848,\"iat_rva\":46326680,\"thunk_hex\":\"2c2e99e\"},{\"hint\":0,\"name\":\"WideCharToMultiByte\",\"ordinal\":null,\"ilt_rva\":46325856,\"iat_rva\":46326688,\"thunk_hex\":\"2c2e9b4\"},{\"hint\":0,\"name\":\"WriteFile\",\"ordinal\":null,\"ilt_rva\":46325864,\"iat_rva\":46326696,\"thunk_hex\":\"2c2e9ca\"}]},{\"index\":8,\"name\":\"SHELL32.dll\",\"name_rva\":46328624,\"original_first_thunk_rva\":46325880,\"first_thunk_rva\":46326712,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319912,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"CommandLineToArgvW\",\"ordinal\":null,\"ilt_rva\":46325880,\"iat_rva\":46326712,\"thunk_hex\":\"2c2e9d6\"},{\"hint\":0,\"name\":\"SHFileOperationW\",\"ordinal\":null,\"ilt_rva\":46325888,\"iat_rva\":46326720,\"thunk_hex\":\"2c2e9ec\"},{\"hint\":0,\"name\":\"SHGetFolderPathW\",\"ordinal\":null,\"ilt_rva\":46325896,\"iat_rva\":46326728,\"thunk_hex\":\"2c2ea00\"}]},{\"index\":9,\"name\":\"api-ms-win-crt-math-l1-1-0.dll\",\"name_rva\":46328636,\"original_first_thunk_rva\":46325912,\"first_thunk_rva\":46326744,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319932,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"__setusermatherr\",\"ordinal\":null,\"ilt_rva\":46325912,\"iat_rva\":46326744,\"thunk_hex\":\"2c2ea14\"}]},{\"index\":10,\"name\":\"api-ms-win-crt-environment-l1-1-0.dll\",\"name_rva\":46328667,\"original_first_thunk_rva\":46325928,\"first_thunk_rva\":46326760,\"time_date_stamp\":0,\"forwarder_chain\":0,\"location\":{\"offset\":46319952,\"bytes\":20},\"functions\":[{\"hint\":0,\"name\":\"__p__wenviron\",\"ordinal\":null,\"ilt_rva\":46325928,\"iat_rva\":46326760,\"thunk_hex\":\"2c2ea28\"}]}],\"delay_imports\":[],\"imphash\":{\"algorithm\":\"pefile\",\"md5\":\"ea8407cbc82c242dd87fcc65793a1e18\",\"reason\":null},\"coverage\":{\"status\":\"complete\",\"reason\":null,\"examined_dlls\":11,\"imports\":93,\"delay_imports\":0},\"issues\":[],\"limitations\":[\"Rows reproduce the PE import and delay-load directories; they do not establish that an import is bound, forwarded or reachable at runtime.\",\"Bound import snapshots, the import address table as loaded, and export-forward resolution in another DLL remain unobserved.\"]},\"confidence\":\"observed\",\"authority\":\"shipped-artifact\",\"environment\":null,\"limitations\":[\"Rows reproduce the PE import and delay-load directories; they do not establish that an import is bound, forwarded or reachable at runtime.\",\"Bound import snapshots, the import address table as loaded, and export-forward resolution in another DLL remain unobserved.\"],\"relationship_coverage\":null,\"locations\":[{\"kind\":\"artifact-path\",\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\"},{\"kind\":\"file-offset-range\",\"start\":46319752,\"end\":46319992}],\"evidence_links\":[]}"
+  }
+ ],
+ "structuredContent": {
+  "evidence_id": "ev_383aca5ba8650d44460ed537a3b19327111ec2af65e02fc728b7b84c0c649f16",
+  "subject": {
+   "name": "dbai-nokia-win64.exe",
+   "digest": {
+    "sha256": "ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da"
+   },
+   "local_path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+   "format": "pe",
+   "architecture": "x86_64"
+  },
+  "provider": {
+   "id": "rea-pe-imports",
+   "name": "REA PE import parser",
+   "version": "1"
+  },
+  "analysis_profile": null,
+  "predicate_type": "rea.analysis",
+  "operation": "inspect_pe_imports",
+  "parameters": {
+   "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+   "max_file_bytes": 67108864,
+   "max_dlls": 256,
+   "max_functions": 8192
+  },
+  "raw_result": null,
+  "normalized_result": {
+   "artifact": {
+    "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+    "sha256": "ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da",
+    "bytes": 46329344
+   },
+   "format": "pe32-plus",
+   "machine": 34404,
+   "bits": 64,
+   "architecture": "amd64",
+   "import_directory": {
+    "rva": 46324872,
+    "size": 240,
+    "locations": [
+     {
+      "offset": 46319752,
+      "bytes": 240
+     }
+    ]
+   },
+   "delay_import_directory": null,
+   "imports": [
+    {
+     "index": 0,
+     "name": "api-ms-win-crt-convert-l1-1-0.dll",
+     "name_rva": 46328376,
+     "original_first_thunk_rva": 46325112,
+     "first_thunk_rva": 46325944,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319752,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "mbstowcs",
+       "ordinal": null,
+       "ilt_rva": 46325112,
+       "iat_rva": 46325944,
+       "thunk_hex": "2c2e3f8"
+      },
+      {
+       "hint": 0,
+       "name": "wcstol",
+       "ordinal": null,
+       "ilt_rva": 46325120,
+       "iat_rva": 46325952,
+       "thunk_hex": "2c2e404"
+      }
+     ]
+    },
+    {
+     "index": 1,
+     "name": "api-ms-win-crt-filesystem-l1-1-0.dll",
+     "name_rva": 46328410,
+     "original_first_thunk_rva": 46325136,
+     "first_thunk_rva": 46325968,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319772,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "_wrename",
+       "ordinal": null,
+       "ilt_rva": 46325136,
+       "iat_rva": 46325968,
+       "thunk_hex": "2c2e40e"
+      }
+     ]
+    },
+    {
+     "index": 2,
+     "name": "api-ms-win-crt-heap-l1-1-0.dll",
+     "name_rva": 46328447,
+     "original_first_thunk_rva": 46325152,
+     "first_thunk_rva": 46325984,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319792,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "_set_new_mode",
+       "ordinal": null,
+       "ilt_rva": 46325152,
+       "iat_rva": 46325984,
+       "thunk_hex": "2c2e41a"
+      },
+      {
+       "hint": 0,
+       "name": "free",
+       "ordinal": null,
+       "ilt_rva": 46325160,
+       "iat_rva": 46325992,
+       "thunk_hex": "2c2e42a"
+      },
+      {
+       "hint": 0,
+       "name": "malloc",
+       "ordinal": null,
+       "ilt_rva": 46325168,
+       "iat_rva": 46326000,
+       "thunk_hex": "2c2e432"
+      }
+     ]
+    },
+    {
+     "index": 3,
+     "name": "api-ms-win-crt-private-l1-1-0.dll",
+     "name_rva": 46328478,
+     "original_first_thunk_rva": 46325184,
+     "first_thunk_rva": 46326016,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319812,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "__C_specific_handler",
+       "ordinal": null,
+       "ilt_rva": 46325184,
+       "iat_rva": 46326016,
+       "thunk_hex": "2c2e43c"
+      },
+      {
+       "hint": 0,
+       "name": "wcschr",
+       "ordinal": null,
+       "ilt_rva": 46325192,
+       "iat_rva": 46326024,
+       "thunk_hex": "2c2e454"
+      }
+     ]
+    },
+    {
+     "index": 4,
+     "name": "api-ms-win-crt-runtime-l1-1-0.dll",
+     "name_rva": 46328512,
+     "original_first_thunk_rva": 46325208,
+     "first_thunk_rva": 46326040,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319832,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "__p___argc",
+       "ordinal": null,
+       "ilt_rva": 46325208,
+       "iat_rva": 46326040,
+       "thunk_hex": "2c2e45e"
+      },
+      {
+       "hint": 0,
+       "name": "__p___wargv",
+       "ordinal": null,
+       "ilt_rva": 46325216,
+       "iat_rva": 46326048,
+       "thunk_hex": "2c2e46c"
+      },
+      {
+       "hint": 0,
+       "name": "_cexit",
+       "ordinal": null,
+       "ilt_rva": 46325224,
+       "iat_rva": 46326056,
+       "thunk_hex": "2c2e47a"
+      },
+      {
+       "hint": 0,
+       "name": "_configure_wide_argv",
+       "ordinal": null,
+       "ilt_rva": 46325232,
+       "iat_rva": 46326064,
+       "thunk_hex": "2c2e484"
+      },
+      {
+       "hint": 0,
+       "name": "_crt_atexit",
+       "ordinal": null,
+       "ilt_rva": 46325240,
+       "iat_rva": 46326072,
+       "thunk_hex": "2c2e49c"
+      },
+      {
+       "hint": 0,
+       "name": "_errno",
+       "ordinal": null,
+       "ilt_rva": 46325248,
+       "iat_rva": 46326080,
+       "thunk_hex": "2c2e4aa"
+      },
+      {
+       "hint": 0,
+       "name": "_exit",
+       "ordinal": null,
+       "ilt_rva": 46325256,
+       "iat_rva": 46326088,
+       "thunk_hex": "2c2e4b4"
+      },
+      {
+       "hint": 0,
+       "name": "_initialize_wide_environment",
+       "ordinal": null,
+       "ilt_rva": 46325264,
+       "iat_rva": 46326096,
+       "thunk_hex": "2c2e4bc"
+      },
+      {
+       "hint": 0,
+       "name": "_initterm",
+       "ordinal": null,
+       "ilt_rva": 46325272,
+       "iat_rva": 46326104,
+       "thunk_hex": "2c2e4dc"
+      },
+      {
+       "hint": 0,
+       "name": "_initterm_e",
+       "ordinal": null,
+       "ilt_rva": 46325280,
+       "iat_rva": 46326112,
+       "thunk_hex": "2c2e4e8"
+      },
+      {
+       "hint": 0,
+       "name": "_set_app_type",
+       "ordinal": null,
+       "ilt_rva": 46325288,
+       "iat_rva": 46326120,
+       "thunk_hex": "2c2e4f6"
+      },
+      {
+       "hint": 0,
+       "name": "_set_invalid_parameter_handler",
+       "ordinal": null,
+       "ilt_rva": 46325296,
+       "iat_rva": 46326128,
+       "thunk_hex": "2c2e506"
+      },
+      {
+       "hint": 0,
+       "name": "abort",
+       "ordinal": null,
+       "ilt_rva": 46325304,
+       "iat_rva": 46326136,
+       "thunk_hex": "2c2e528"
+      },
+      {
+       "hint": 0,
+       "name": "exit",
+       "ordinal": null,
+       "ilt_rva": 46325312,
+       "iat_rva": 46326144,
+       "thunk_hex": "2c2e530"
+      },
+      {
+       "hint": 0,
+       "name": "signal",
+       "ordinal": null,
+       "ilt_rva": 46325320,
+       "iat_rva": 46326152,
+       "thunk_hex": "2c2e538"
+      }
+     ]
+    },
+    {
+     "index": 5,
+     "name": "api-ms-win-crt-stdio-l1-1-0.dll",
+     "name_rva": 46328546,
+     "original_first_thunk_rva": 46325336,
+     "first_thunk_rva": 46326168,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319852,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "__acrt_iob_func",
+       "ordinal": null,
+       "ilt_rva": 46325336,
+       "iat_rva": 46326168,
+       "thunk_hex": "2c2e542"
+      },
+      {
+       "hint": 0,
+       "name": "__p__commode",
+       "ordinal": null,
+       "ilt_rva": 46325344,
+       "iat_rva": 46326176,
+       "thunk_hex": "2c2e554"
+      },
+      {
+       "hint": 0,
+       "name": "__p__fmode",
+       "ordinal": null,
+       "ilt_rva": 46325352,
+       "iat_rva": 46326184,
+       "thunk_hex": "2c2e564"
+      },
+      {
+       "hint": 0,
+       "name": "__stdio_common_vfprintf",
+       "ordinal": null,
+       "ilt_rva": 46325360,
+       "iat_rva": 46326192,
+       "thunk_hex": "2c2e572"
+      },
+      {
+       "hint": 0,
+       "name": "__stdio_common_vsprintf",
+       "ordinal": null,
+       "ilt_rva": 46325368,
+       "iat_rva": 46326200,
+       "thunk_hex": "2c2e58c"
+      },
+      {
+       "hint": 0,
+       "name": "__stdio_common_vswprintf",
+       "ordinal": null,
+       "ilt_rva": 46325376,
+       "iat_rva": 46326208,
+       "thunk_hex": "2c2e5a6"
+      },
+      {
+       "hint": 0,
+       "name": "fwrite",
+       "ordinal": null,
+       "ilt_rva": 46325384,
+       "iat_rva": 46326216,
+       "thunk_hex": "2c2e5c2"
+      },
+      {
+       "hint": 0,
+       "name": "puts",
+       "ordinal": null,
+       "ilt_rva": 46325392,
+       "iat_rva": 46326224,
+       "thunk_hex": "2c2e5cc"
+      }
+     ]
+    },
+    {
+     "index": 6,
+     "name": "api-ms-win-crt-string-l1-1-0.dll",
+     "name_rva": 46328578,
+     "original_first_thunk_rva": 46325408,
+     "first_thunk_rva": 46326240,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319872,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "_wcsdup",
+       "ordinal": null,
+       "ilt_rva": 46325408,
+       "iat_rva": 46326240,
+       "thunk_hex": "2c2e5d4"
+      },
+      {
+       "hint": 0,
+       "name": "_wcsicmp",
+       "ordinal": null,
+       "ilt_rva": 46325416,
+       "iat_rva": 46326248,
+       "thunk_hex": "2c2e5de"
+      },
+      {
+       "hint": 0,
+       "name": "iswctype",
+       "ordinal": null,
+       "ilt_rva": 46325424,
+       "iat_rva": 46326256,
+       "thunk_hex": "2c2e5ea"
+      },
+      {
+       "hint": 0,
+       "name": "strcat",
+       "ordinal": null,
+       "ilt_rva": 46325432,
+       "iat_rva": 46326264,
+       "thunk_hex": "2c2e5f6"
+      },
+      {
+       "hint": 0,
+       "name": "strcpy",
+       "ordinal": null,
+       "ilt_rva": 46325440,
+       "iat_rva": 46326272,
+       "thunk_hex": "2c2e600"
+      },
+      {
+       "hint": 0,
+       "name": "strncpy",
+       "ordinal": null,
+       "ilt_rva": 46325448,
+       "iat_rva": 46326280,
+       "thunk_hex": "2c2e60a"
+      },
+      {
+       "hint": 0,
+       "name": "wcscmp",
+       "ordinal": null,
+       "ilt_rva": 46325456,
+       "iat_rva": 46326288,
+       "thunk_hex": "2c2e614"
+      },
+      {
+       "hint": 0,
+       "name": "wcslen",
+       "ordinal": null,
+       "ilt_rva": 46325464,
+       "iat_rva": 46326296,
+       "thunk_hex": "2c2e61e"
+      },
+      {
+       "hint": 0,
+       "name": "wcsncmp",
+       "ordinal": null,
+       "ilt_rva": 46325472,
+       "iat_rva": 46326304,
+       "thunk_hex": "2c2e628"
+      }
+     ]
+    },
+    {
+     "index": 7,
+     "name": "KERNEL32.dll",
+     "name_rva": 46328611,
+     "original_first_thunk_rva": 46325488,
+     "first_thunk_rva": 46326320,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319892,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "AddDllDirectory",
+       "ordinal": null,
+       "ilt_rva": 46325488,
+       "iat_rva": 46326320,
+       "thunk_hex": "2c2e632"
+      },
+      {
+       "hint": 0,
+       "name": "CloseHandle",
+       "ordinal": null,
+       "ilt_rva": 46325496,
+       "iat_rva": 46326328,
+       "thunk_hex": "2c2e644"
+      },
+      {
+       "hint": 0,
+       "name": "CopyFileW",
+       "ordinal": null,
+       "ilt_rva": 46325504,
+       "iat_rva": 46326336,
+       "thunk_hex": "2c2e652"
+      },
+      {
+       "hint": 0,
+       "name": "CreateDirectoryW",
+       "ordinal": null,
+       "ilt_rva": 46325512,
+       "iat_rva": 46326344,
+       "thunk_hex": "2c2e65e"
+      },
+      {
+       "hint": 0,
+       "name": "CreateFileMappingW",
+       "ordinal": null,
+       "ilt_rva": 46325520,
+       "iat_rva": 46326352,
+       "thunk_hex": "2c2e672"
+      },
+      {
+       "hint": 0,
+       "name": "CreateFileW",
+       "ordinal": null,
+       "ilt_rva": 46325528,
+       "iat_rva": 46326360,
+       "thunk_hex": "2c2e688"
+      },
+      {
+       "hint": 0,
+       "name": "CreateProcessW",
+       "ordinal": null,
+       "ilt_rva": 46325536,
+       "iat_rva": 46326368,
+       "thunk_hex": "2c2e696"
+      },
+      {
+       "hint": 0,
+       "name": "DeleteCriticalSection",
+       "ordinal": null,
+       "ilt_rva": 46325544,
+       "iat_rva": 46326376,
+       "thunk_hex": "2c2e6a8"
+      },
+      {
+       "hint": 0,
+       "name": "DeleteFileW",
+       "ordinal": null,
+       "ilt_rva": 46325552,
+       "iat_rva": 46326384,
+       "thunk_hex": "2c2e6c0"
+      },
+      {
+       "hint": 0,
+       "name": "EnterCriticalSection",
+       "ordinal": null,
+       "ilt_rva": 46325560,
+       "iat_rva": 46326392,
+       "thunk_hex": "2c2e6ce"
+      },
+      {
+       "hint": 0,
+       "name": "FormatMessageA",
+       "ordinal": null,
+       "ilt_rva": 46325568,
+       "iat_rva": 46326400,
+       "thunk_hex": "2c2e6e6"
+      },
+      {
+       "hint": 0,
+       "name": "GetCommandLineW",
+       "ordinal": null,
+       "ilt_rva": 46325576,
+       "iat_rva": 46326408,
+       "thunk_hex": "2c2e6f8"
+      },
+      {
+       "hint": 0,
+       "name": "GetCurrentProcessId",
+       "ordinal": null,
+       "ilt_rva": 46325584,
+       "iat_rva": 46326416,
+       "thunk_hex": "2c2e70a"
+      },
+      {
+       "hint": 0,
+       "name": "GetEnvironmentVariableW",
+       "ordinal": null,
+       "ilt_rva": 46325592,
+       "iat_rva": 46326424,
+       "thunk_hex": "2c2e720"
+      },
+      {
+       "hint": 0,
+       "name": "GetExitCodeProcess",
+       "ordinal": null,
+       "ilt_rva": 46325600,
+       "iat_rva": 46326432,
+       "thunk_hex": "2c2e73a"
+      },
+      {
+       "hint": 0,
+       "name": "GetFileAttributesW",
+       "ordinal": null,
+       "ilt_rva": 46325608,
+       "iat_rva": 46326440,
+       "thunk_hex": "2c2e750"
+      },
+      {
+       "hint": 0,
+       "name": "GetFileSize",
+       "ordinal": null,
+       "ilt_rva": 46325616,
+       "iat_rva": 46326448,
+       "thunk_hex": "2c2e766"
+      },
+      {
+       "hint": 0,
+       "name": "GetFullPathNameW",
+       "ordinal": null,
+       "ilt_rva": 46325624,
+       "iat_rva": 46326456,
+       "thunk_hex": "2c2e774"
+      },
+      {
+       "hint": 0,
+       "name": "GetLastError",
+       "ordinal": null,
+       "ilt_rva": 46325632,
+       "iat_rva": 46326464,
+       "thunk_hex": "2c2e788"
+      },
+      {
+       "hint": 0,
+       "name": "GetModuleFileNameW",
+       "ordinal": null,
+       "ilt_rva": 46325640,
+       "iat_rva": 46326472,
+       "thunk_hex": "2c2e798"
+      },
+      {
+       "hint": 0,
+       "name": "GetModuleHandleA",
+       "ordinal": null,
+       "ilt_rva": 46325648,
+       "iat_rva": 46326480,
+       "thunk_hex": "2c2e7ae"
+      },
+      {
+       "hint": 0,
+       "name": "GetModuleHandleExA",
+       "ordinal": null,
+       "ilt_rva": 46325656,
+       "iat_rva": 46326488,
+       "thunk_hex": "2c2e7c2"
+      },
+      {
+       "hint": 0,
+       "name": "GetProcAddress",
+       "ordinal": null,
+       "ilt_rva": 46325664,
+       "iat_rva": 46326496,
+       "thunk_hex": "2c2e7d8"
+      },
+      {
+       "hint": 0,
+       "name": "GetShortPathNameW",
+       "ordinal": null,
+       "ilt_rva": 46325672,
+       "iat_rva": 46326504,
+       "thunk_hex": "2c2e7ea"
+      },
+      {
+       "hint": 0,
+       "name": "GetStdHandle",
+       "ordinal": null,
+       "ilt_rva": 46325680,
+       "iat_rva": 46326512,
+       "thunk_hex": "2c2e7fe"
+      },
+      {
+       "hint": 0,
+       "name": "GetSystemTimeAsFileTime",
+       "ordinal": null,
+       "ilt_rva": 46325688,
+       "iat_rva": 46326520,
+       "thunk_hex": "2c2e80e"
+      },
+      {
+       "hint": 0,
+       "name": "GetTempPathW",
+       "ordinal": null,
+       "ilt_rva": 46325696,
+       "iat_rva": 46326528,
+       "thunk_hex": "2c2e828"
+      },
+      {
+       "hint": 0,
+       "name": "InitializeCriticalSection",
+       "ordinal": null,
+       "ilt_rva": 46325704,
+       "iat_rva": 46326536,
+       "thunk_hex": "2c2e838"
+      },
+      {
+       "hint": 0,
+       "name": "K32GetModuleFileNameExW",
+       "ordinal": null,
+       "ilt_rva": 46325712,
+       "iat_rva": 46326544,
+       "thunk_hex": "2c2e854"
+      },
+      {
+       "hint": 0,
+       "name": "LeaveCriticalSection",
+       "ordinal": null,
+       "ilt_rva": 46325720,
+       "iat_rva": 46326552,
+       "thunk_hex": "2c2e86e"
+      },
+      {
+       "hint": 0,
+       "name": "LoadLibraryExW",
+       "ordinal": null,
+       "ilt_rva": 46325728,
+       "iat_rva": 46326560,
+       "thunk_hex": "2c2e886"
+      },
+      {
+       "hint": 0,
+       "name": "MapViewOfFile",
+       "ordinal": null,
+       "ilt_rva": 46325736,
+       "iat_rva": 46326568,
+       "thunk_hex": "2c2e898"
+      },
+      {
+       "hint": 0,
+       "name": "OpenProcess",
+       "ordinal": null,
+       "ilt_rva": 46325744,
+       "iat_rva": 46326576,
+       "thunk_hex": "2c2e8a8"
+      },
+      {
+       "hint": 0,
+       "name": "QueryPerformanceCounter",
+       "ordinal": null,
+       "ilt_rva": 46325752,
+       "iat_rva": 46326584,
+       "thunk_hex": "2c2e8b6"
+      },
+      {
+       "hint": 0,
+       "name": "ReadFile",
+       "ordinal": null,
+       "ilt_rva": 46325760,
+       "iat_rva": 46326592,
+       "thunk_hex": "2c2e8d0"
+      },
+      {
+       "hint": 0,
+       "name": "SetConsoleCtrlHandler",
+       "ordinal": null,
+       "ilt_rva": 46325768,
+       "iat_rva": 46326600,
+       "thunk_hex": "2c2e8dc"
+      },
+      {
+       "hint": 0,
+       "name": "SetDllDirectoryW",
+       "ordinal": null,
+       "ilt_rva": 46325776,
+       "iat_rva": 46326608,
+       "thunk_hex": "2c2e8f4"
+      },
+      {
+       "hint": 0,
+       "name": "SetEnvironmentVariableW",
+       "ordinal": null,
+       "ilt_rva": 46325784,
+       "iat_rva": 46326616,
+       "thunk_hex": "2c2e908"
+      },
+      {
+       "hint": 0,
+       "name": "SetUnhandledExceptionFilter",
+       "ordinal": null,
+       "ilt_rva": 46325792,
+       "iat_rva": 46326624,
+       "thunk_hex": "2c2e922"
+      },
+      {
+       "hint": 0,
+       "name": "Sleep",
+       "ordinal": null,
+       "ilt_rva": 46325800,
+       "iat_rva": 46326632,
+       "thunk_hex": "2c2e940"
+      },
+      {
+       "hint": 0,
+       "name": "TerminateProcess",
+       "ordinal": null,
+       "ilt_rva": 46325808,
+       "iat_rva": 46326640,
+       "thunk_hex": "2c2e948"
+      },
+      {
+       "hint": 0,
+       "name": "TlsGetValue",
+       "ordinal": null,
+       "ilt_rva": 46325816,
+       "iat_rva": 46326648,
+       "thunk_hex": "2c2e95c"
+      },
+      {
+       "hint": 0,
+       "name": "UnmapViewOfFile",
+       "ordinal": null,
+       "ilt_rva": 46325824,
+       "iat_rva": 46326656,
+       "thunk_hex": "2c2e96a"
+      },
+      {
+       "hint": 0,
+       "name": "VirtualProtect",
+       "ordinal": null,
+       "ilt_rva": 46325832,
+       "iat_rva": 46326664,
+       "thunk_hex": "2c2e97c"
+      },
+      {
+       "hint": 0,
+       "name": "VirtualQuery",
+       "ordinal": null,
+       "ilt_rva": 46325840,
+       "iat_rva": 46326672,
+       "thunk_hex": "2c2e98e"
+      },
+      {
+       "hint": 0,
+       "name": "WaitForSingleObject",
+       "ordinal": null,
+       "ilt_rva": 46325848,
+       "iat_rva": 46326680,
+       "thunk_hex": "2c2e99e"
+      },
+      {
+       "hint": 0,
+       "name": "WideCharToMultiByte",
+       "ordinal": null,
+       "ilt_rva": 46325856,
+       "iat_rva": 46326688,
+       "thunk_hex": "2c2e9b4"
+      },
+      {
+       "hint": 0,
+       "name": "WriteFile",
+       "ordinal": null,
+       "ilt_rva": 46325864,
+       "iat_rva": 46326696,
+       "thunk_hex": "2c2e9ca"
+      }
+     ]
+    },
+    {
+     "index": 8,
+     "name": "SHELL32.dll",
+     "name_rva": 46328624,
+     "original_first_thunk_rva": 46325880,
+     "first_thunk_rva": 46326712,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319912,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "CommandLineToArgvW",
+       "ordinal": null,
+       "ilt_rva": 46325880,
+       "iat_rva": 46326712,
+       "thunk_hex": "2c2e9d6"
+      },
+      {
+       "hint": 0,
+       "name": "SHFileOperationW",
+       "ordinal": null,
+       "ilt_rva": 46325888,
+       "iat_rva": 46326720,
+       "thunk_hex": "2c2e9ec"
+      },
+      {
+       "hint": 0,
+       "name": "SHGetFolderPathW",
+       "ordinal": null,
+       "ilt_rva": 46325896,
+       "iat_rva": 46326728,
+       "thunk_hex": "2c2ea00"
+      }
+     ]
+    },
+    {
+     "index": 9,
+     "name": "api-ms-win-crt-math-l1-1-0.dll",
+     "name_rva": 46328636,
+     "original_first_thunk_rva": 46325912,
+     "first_thunk_rva": 46326744,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319932,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "__setusermatherr",
+       "ordinal": null,
+       "ilt_rva": 46325912,
+       "iat_rva": 46326744,
+       "thunk_hex": "2c2ea14"
+      }
+     ]
+    },
+    {
+     "index": 10,
+     "name": "api-ms-win-crt-environment-l1-1-0.dll",
+     "name_rva": 46328667,
+     "original_first_thunk_rva": 46325928,
+     "first_thunk_rva": 46326760,
+     "time_date_stamp": 0,
+     "forwarder_chain": 0,
+     "location": {
+      "offset": 46319952,
+      "bytes": 20
+     },
+     "functions": [
+      {
+       "hint": 0,
+       "name": "__p__wenviron",
+       "ordinal": null,
+       "ilt_rva": 46325928,
+       "iat_rva": 46326760,
+       "thunk_hex": "2c2ea28"
+      }
+     ]
+    }
+   ],
+   "delay_imports": [],
+   "imphash": {
+    "algorithm": "pefile",
+    "md5": "ea8407cbc82c242dd87fcc65793a1e18",
+    "reason": null
+   },
+   "coverage": {
+    "status": "complete",
+    "reason": null,
+    "examined_dlls": 11,
+    "imports": 93,
+    "delay_imports": 0
+   },
+   "issues": [],
+   "limitations": [
+    "Rows reproduce the PE import and delay-load directories; they do not establish that an import is bound, forwarded or reachable at runtime.",
+    "Bound import snapshots, the import address table as loaded, and export-forward resolution in another DLL remain unobserved."
+   ]
+  },
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+   "Rows reproduce the PE import and delay-load directories; they do not establish that an import is bound, forwarded or reachable at runtime.",
+   "Bound import snapshots, the import address table as loaded, and export-forward resolution in another DLL remain unobserved."
+  ],
+  "relationship_coverage": null,
+  "locations": [
+   {
+    "kind": "artifact-path",
+    "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe"
+   },
+   {
+    "kind": "file-offset-range",
+    "start": 46319752,
+    "end": 46319992
+   }
+  ],
+  "evidence_links": []
+ }
+}

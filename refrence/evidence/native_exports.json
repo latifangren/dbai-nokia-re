@@ -1,0 +1,79 @@
+{
+ "_meta": {
+  "provenance": {
+   "untrusted_content": true,
+   "source": "analysis_target"
+  }
+ },
+ "content": [
+  {
+   "type": "text",
+   "text": "{\"evidence_id\":\"ev_2b0d2752d1ee21dc770883565e4e9e5cb7a09c55db0cfdcf510dfa522bd94abe\",\"subject\":{\"name\":\"dbai-nokia-win64.exe\",\"digest\":{\"sha256\":\"ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da\"},\"local_path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"format\":\"pe\",\"architecture\":null},\"provider\":{\"id\":\"rea-native-exports\",\"name\":\"REA PE/ELF export table reader\",\"version\":\"1\"},\"analysis_profile\":null,\"predicate_type\":\"rea.analysis\",\"operation\":\"inspect_native_exports\",\"parameters\":{\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"max_file_bytes\":268435456},\"raw_result\":null,\"normalized_result\":{\"artifact\":{\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"sha256\":\"ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da\",\"bytes\":46329344},\"format\":\"pe\",\"architecture\":\"amd64\",\"bits\":64,\"export_directory\":null,\"exports\":[],\"coverage\":{\"status\":\"complete\",\"reason\":null,\"examined_entries\":0,\"exports\":0},\"issues\":[],\"limitations\":[\"The image declares no export directory, so it exports nothing by name or ordinal.\",\"Rows reproduce the PE export directory; they do not establish that an export is reachable, safe to call or loaded at runtime.\",\"Forwarded exports resolve in another DLL, which is not opened; ordinal-only exports have no name in this image.\"]},\"confidence\":\"observed\",\"authority\":\"shipped-artifact\",\"environment\":null,\"limitations\":[\"The image declares no export directory, so it exports nothing by name or ordinal.\",\"Rows reproduce the PE export directory; they do not establish that an export is reachable, safe to call or loaded at runtime.\",\"Forwarded exports resolve in another DLL, which is not opened; ordinal-only exports have no name in this image.\"],\"relationship_coverage\":null,\"locations\":[{\"kind\":\"artifact-path\",\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\"}],\"evidence_links\":[]}"
+  }
+ ],
+ "structuredContent": {
+  "evidence_id": "ev_2b0d2752d1ee21dc770883565e4e9e5cb7a09c55db0cfdcf510dfa522bd94abe",
+  "subject": {
+   "name": "dbai-nokia-win64.exe",
+   "digest": {
+    "sha256": "ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da"
+   },
+   "local_path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+   "format": "pe",
+   "architecture": null
+  },
+  "provider": {
+   "id": "rea-native-exports",
+   "name": "REA PE/ELF export table reader",
+   "version": "1"
+  },
+  "analysis_profile": null,
+  "predicate_type": "rea.analysis",
+  "operation": "inspect_native_exports",
+  "parameters": {
+   "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+   "max_file_bytes": 268435456
+  },
+  "raw_result": null,
+  "normalized_result": {
+   "artifact": {
+    "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+    "sha256": "ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da",
+    "bytes": 46329344
+   },
+   "format": "pe",
+   "architecture": "amd64",
+   "bits": 64,
+   "export_directory": null,
+   "exports": [],
+   "coverage": {
+    "status": "complete",
+    "reason": null,
+    "examined_entries": 0,
+    "exports": 0
+   },
+   "issues": [],
+   "limitations": [
+    "The image declares no export directory, so it exports nothing by name or ordinal.",
+    "Rows reproduce the PE export directory; they do not establish that an export is reachable, safe to call or loaded at runtime.",
+    "Forwarded exports resolve in another DLL, which is not opened; ordinal-only exports have no name in this image."
+   ]
+  },
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+   "The image declares no export directory, so it exports nothing by name or ordinal.",
+   "Rows reproduce the PE export directory; they do not establish that an export is reachable, safe to call or loaded at runtime.",
+   "Forwarded exports resolve in another DLL, which is not opened; ordinal-only exports have no name in this image."
+  ],
+  "relationship_coverage": null,
+  "locations": [
+   {
+    "kind": "artifact-path",
+    "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe"
+   }
+  ],
+  "evidence_links": []
+ }
+}

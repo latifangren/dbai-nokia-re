@@ -1,0 +1,204 @@
+{
+ "_meta": {
+  "provenance": {
+   "untrusted_content": true,
+   "source": "analysis_target"
+  }
+ },
+ "content": [
+  {
+   "type": "text",
+   "text": "{\"evidence_id\":\"ev_79014e4049f49022d5f29cc4aefaba4f56eec23b2947bc07563d9abcf9008e43\",\"subject\":{\"name\":\"dbai-nokia-win64.exe\",\"digest\":{\"sha256\":\"ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da\"},\"local_path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"format\":\"pe\",\"architecture\":\"x86_64\"},\"provider\":{\"id\":\"rea-pe-resources\",\"name\":\"REA PE resource parser\",\"version\":\"1\"},\"analysis_profile\":null,\"predicate_type\":\"rea.analysis\",\"operation\":\"inspect_pe_resources\",\"parameters\":{\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"max_file_bytes\":67108864,\"max_entries\":16384},\"raw_result\":null,\"normalized_result\":{\"artifact\":{\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\",\"sha256\":\"ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da\",\"bytes\":46329344},\"format\":\"pe32-plus\",\"machine\":34404,\"directory\":{\"rva\":46526464,\"location\":{\"offset\":46327296,\"bytes\":1356},\"data_directory_location\":{\"offset\":272,\"bytes\":8}},\"directories\":[{\"path\":[],\"entry_locations\":[],\"location\":{\"offset\":46327296,\"bytes\":24},\"characteristics\":0,\"timestamp\":0,\"major_version\":4,\"minor_version\":0,\"named_entries\":0,\"id_entries\":1},{\"path\":[{\"kind\":\"id\",\"id\":24}],\"entry_locations\":[{\"offset\":46327312,\"bytes\":8}],\"location\":{\"offset\":46327320,\"bytes\":24},\"characteristics\":0,\"timestamp\":0,\"major_version\":4,\"minor_version\":0,\"named_entries\":0,\"id_entries\":1},{\"path\":[{\"kind\":\"id\",\"id\":24},{\"kind\":\"id\",\"id\":1}],\"entry_locations\":[{\"offset\":46327312,\"bytes\":8},{\"offset\":46327336,\"bytes\":8}],\"location\":{\"offset\":46327344,\"bytes\":24},\"characteristics\":0,\"timestamp\":0,\"major_version\":4,\"minor_version\":0,\"named_entries\":0,\"id_entries\":1}],\"resources\":[{\"index\":0,\"type\":{\"kind\":\"id\",\"id\":24},\"name\":{\"kind\":\"id\",\"id\":1},\"language\":{\"kind\":\"id\",\"id\":0},\"entry_locations\":[{\"offset\":46327312,\"bytes\":8},{\"offset\":46327336,\"bytes\":8},{\"offset\":46327360,\"bytes\":8}],\"data_entry_location\":{\"offset\":46327368,\"bytes\":16},\"code_page\":1252,\"reserved\":0,\"payload\":{\"rva\":46526552,\"location\":{\"offset\":46327384,\"bytes\":1265},\"sha256\":\"94b146eac0a80f5089ac9e57303515ddf9087d9d88fd4d47f27df8f3cf14cbb4\"}}],\"icon_groups\":[],\"coverage\":{\"status\":\"complete\",\"examined_entries\":3,\"resources\":1},\"limitations\":[\"Static PE32/PE32+ type/name/language resource inventory; payloads other than RT_GROUP_ICON remain opaque.\",\"Icon candidates are resource-table relationships. Language fallback, image decoding and actual shell/window loading are not observed.\",\"Exact shared byte ranges are retained; non-identical overlapping resource structures or payloads are rejected.\"]},\"confidence\":\"observed\",\"authority\":\"shipped-artifact\",\"environment\":null,\"limitations\":[\"Static PE32/PE32+ type/name/language resource inventory; payloads other than RT_GROUP_ICON remain opaque.\",\"Icon candidates are resource-table relationships. Language fallback, image decoding and actual shell/window loading are not observed.\",\"Exact shared byte ranges are retained; non-identical overlapping resource structures or payloads are rejected.\"],\"relationship_coverage\":null,\"locations\":[{\"kind\":\"artifact-path\",\"path\":\"/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe\"}],\"evidence_links\":[]}"
+  }
+ ],
+ "structuredContent": {
+  "evidence_id": "ev_79014e4049f49022d5f29cc4aefaba4f56eec23b2947bc07563d9abcf9008e43",
+  "subject": {
+   "name": "dbai-nokia-win64.exe",
+   "digest": {
+    "sha256": "ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da"
+   },
+   "local_path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+   "format": "pe",
+   "architecture": "x86_64"
+  },
+  "provider": {
+   "id": "rea-pe-resources",
+   "name": "REA PE resource parser",
+   "version": "1"
+  },
+  "analysis_profile": null,
+  "predicate_type": "rea.analysis",
+  "operation": "inspect_pe_resources",
+  "parameters": {
+   "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+   "max_file_bytes": 67108864,
+   "max_entries": 16384
+  },
+  "raw_result": null,
+  "normalized_result": {
+   "artifact": {
+    "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe",
+    "sha256": "ee4a353f4a1df881cbbc4472c48bcf4ddb2363a84ee706afb214a79d948569da",
+    "bytes": 46329344
+   },
+   "format": "pe32-plus",
+   "machine": 34404,
+   "directory": {
+    "rva": 46526464,
+    "location": {
+     "offset": 46327296,
+     "bytes": 1356
+    },
+    "data_directory_location": {
+     "offset": 272,
+     "bytes": 8
+    }
+   },
+   "directories": [
+    {
+     "path": [],
+     "entry_locations": [],
+     "location": {
+      "offset": 46327296,
+      "bytes": 24
+     },
+     "characteristics": 0,
+     "timestamp": 0,
+     "major_version": 4,
+     "minor_version": 0,
+     "named_entries": 0,
+     "id_entries": 1
+    },
+    {
+     "path": [
+      {
+       "kind": "id",
+       "id": 24
+      }
+     ],
+     "entry_locations": [
+      {
+       "offset": 46327312,
+       "bytes": 8
+      }
+     ],
+     "location": {
+      "offset": 46327320,
+      "bytes": 24
+     },
+     "characteristics": 0,
+     "timestamp": 0,
+     "major_version": 4,
+     "minor_version": 0,
+     "named_entries": 0,
+     "id_entries": 1
+    },
+    {
+     "path": [
+      {
+       "kind": "id",
+       "id": 24
+      },
+      {
+       "kind": "id",
+       "id": 1
+      }
+     ],
+     "entry_locations": [
+      {
+       "offset": 46327312,
+       "bytes": 8
+      },
+      {
+       "offset": 46327336,
+       "bytes": 8
+      }
+     ],
+     "location": {
+      "offset": 46327344,
+      "bytes": 24
+     },
+     "characteristics": 0,
+     "timestamp": 0,
+     "major_version": 4,
+     "minor_version": 0,
+     "named_entries": 0,
+     "id_entries": 1
+    }
+   ],
+   "resources": [
+    {
+     "index": 0,
+     "type": {
+      "kind": "id",
+      "id": 24
+     },
+     "name": {
+      "kind": "id",
+      "id": 1
+     },
+     "language": {
+      "kind": "id",
+      "id": 0
+     },
+     "entry_locations": [
+      {
+       "offset": 46327312,
+       "bytes": 8
+      },
+      {
+       "offset": 46327336,
+       "bytes": 8
+      },
+      {
+       "offset": 46327360,
+       "bytes": 8
+      }
+     ],
+     "data_entry_location": {
+      "offset": 46327368,
+      "bytes": 16
+     },
+     "code_page": 1252,
+     "reserved": 0,
+     "payload": {
+      "rva": 46526552,
+      "location": {
+       "offset": 46327384,
+       "bytes": 1265
+      },
+      "sha256": "94b146eac0a80f5089ac9e57303515ddf9087d9d88fd4d47f27df8f3cf14cbb4"
+     }
+    }
+   ],
+   "icon_groups": [],
+   "coverage": {
+    "status": "complete",
+    "examined_entries": 3,
+    "resources": 1
+   },
+   "limitations": [
+    "Static PE32/PE32+ type/name/language resource inventory; payloads other than RT_GROUP_ICON remain opaque.",
+    "Icon candidates are resource-table relationships. Language fallback, image decoding and actual shell/window loading are not observed.",
+    "Exact shared byte ranges are retained; non-identical overlapping resource structures or payloads are rejected."
+   ]
+  },
+  "confidence": "observed",
+  "authority": "shipped-artifact",
+  "environment": null,
+  "limitations": [
+   "Static PE32/PE32+ type/name/language resource inventory; payloads other than RT_GROUP_ICON remain opaque.",
+   "Icon candidates are resource-table relationships. Language fallback, image decoding and actual shell/window loading are not observed.",
+   "Exact shared byte ranges are retained; non-identical overlapping resource structures or payloads are rejected."
+  ],
+  "relationship_coverage": null,
+  "locations": [
+   {
+    "kind": "artifact-path",
+    "path": "/home/hatch/workspace/dbai-nokia-re/target/dbai-nokia-win64.exe"
+   }
+  ],
+  "evidence_links": []
+ }
+}

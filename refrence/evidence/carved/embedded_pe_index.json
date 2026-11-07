@@ -1,0 +1,536 @@
+[
+ {
+  "offset": 0,
+  "machine": "0x8664",
+  "sections": 7,
+  "is64": true,
+  "entry": "0x4e20",
+  "imagebase": "0x140000000",
+  "sizeimage": 46534656,
+  "extent": 46329344,
+  "dllname": null,
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".tls",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 68649,
+  "machine": "0x8664",
+  "sections": 7,
+  "is64": true,
+  "entry": "0x993030",
+  "imagebase": "0x180000000",
+  "sizeimage": 19705856,
+  "extent": 19445248,
+  "dllname": "_nuitka_temp.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".tls",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 19513931,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x1bf4",
+  "imagebase": "0x180000000",
+  "sizeimage": 73728,
+  "extent": 58880,
+  "dllname": "_asyncio.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 19586885,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0xa744",
+  "imagebase": "0x180000000",
+  "sizeimage": 86016,
+  "extent": 72704,
+  "dllname": "_bz2.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 19673681,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x1ad44",
+  "imagebase": "0x180000000",
+  "sizeimage": 200704,
+  "extent": 180736,
+  "dllname": "_cffi_backend.cp313-win_amd64.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 19854449,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x69d4",
+  "imagebase": "0x180000000",
+  "sizeimage": 139264,
+  "extent": 120320,
+  "dllname": "_ctypes.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 19988851,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x22040",
+  "imagebase": "0x180000000",
+  "sizeimage": 290816,
+  "extent": 272384,
+  "dllname": "_decimal.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20275317,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x45b4",
+  "imagebase": "0x180000000",
+  "sizeimage": 73728,
+  "extent": 55296,
+  "dllname": "_hashlib.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20344689,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x13044",
+  "imagebase": "0x180000000",
+  "sizeimage": 159744,
+  "extent": 145408,
+  "dllname": "_lzma.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20504195,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x1444",
+  "imagebase": "0x180000000",
+  "sizeimage": 40960,
+  "extent": 24064,
+  "dllname": "_multiprocessing.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20542347,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x1944",
+  "imagebase": "0x180000000",
+  "sizeimage": 57344,
+  "extent": 43520,
+  "dllname": "_overlapped.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20599945,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x14a4",
+  "imagebase": "0x180000000",
+  "sizeimage": 36864,
+  "extent": 21504,
+  "dllname": "_queue.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20635529,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x2d84",
+  "imagebase": "0x180000000",
+  "sizeimage": 90112,
+  "extent": 72704,
+  "dllname": "_socket.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20722307,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x2ec4",
+  "imagebase": "0x180000000",
+  "sizeimage": 184320,
+  "extent": 167936,
+  "dllname": "_ssl.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20904317,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x29d0",
+  "imagebase": "0x180000000",
+  "sizeimage": 45056,
+  "extent": 25600,
+  "dllname": "_wmi.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 20944005,
+  "machine": "0x8664",
+  "sections": 8,
+  "is64": true,
+  "entry": "0x1276",
+  "imagebase": "0x180000000",
+  "sizeimage": 5255168,
+  "extent": 5224448,
+  "dllname": "libcrypto-3.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".idata",
+   ".00cfg",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 26182559,
+  "machine": "0x8664",
+  "sections": 5,
+  "is64": true,
+  "entry": "0x4ce0",
+  "imagebase": "0x180000000",
+  "sizeimage": 45056,
+  "extent": 27648,
+  "dllname": "libffi-8.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 26222289,
+  "machine": "0x8664",
+  "sections": 8,
+  "is64": true,
+  "entry": "0x104b",
+  "imagebase": "0x180000000",
+  "sizeimage": 798720,
+  "extent": 780800,
+  "dllname": "libssl-3.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".idata",
+   ".00cfg",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 27017193,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x11254",
+  "imagebase": "0x180000000",
+  "sizeimage": 221184,
+  "extent": 207872,
+  "dllname": "pyexpat.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 27239145,
+  "machine": "0x8664",
+  "sections": 2,
+  "is64": true,
+  "entry": "0x0",
+  "imagebase": "0x180000000",
+  "sizeimage": 65536,
+  "extent": 58368,
+  "dllname": "python3.dll",
+  "secs": [
+   ".rdata",
+   ".rsrc"
+  ]
+ },
+ {
+  "offset": 27311597,
+  "machine": "0x8664",
+  "sections": 7,
+  "is64": true,
+  "entry": "0x1c2044",
+  "imagebase": "0x180000000",
+  "sizeimage": 6647808,
+  "extent": 6118400,
+  "dllname": "python313.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   "PyRuntim",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 33444075,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x14a4",
+  "imagebase": "0x180000000",
+  "sizeimage": 36864,
+  "extent": 18944,
+  "dllname": "select.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 33477107,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x2b94",
+  "imagebase": "0x180000000",
+  "sizeimage": 720896,
+  "extent": 698880,
+  "dllname": "unicodedata.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 34190077,
+  "machine": "0x8664",
+  "sections": 8,
+  "is64": true,
+  "entry": "0xf690",
+  "imagebase": "0x180000000",
+  "sizeimage": 122880,
+  "extent": 99840,
+  "dllname": "VCRUNTIME140.dll",
+  "secs": [
+   ".text",
+   "fothk",
+   ".rdata",
+   ".data",
+   ".pdata",
+   "_RDATA",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 34310523,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x40a0",
+  "imagebase": "0x180000000",
+  "sizeimage": 49152,
+  "extent": 29184,
+  "dllname": "VCRUNTIME140_1.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 34360345,
+  "machine": "0x8664",
+  "sections": 5,
+  "is64": true,
+  "entry": "0x2ed50",
+  "imagebase": "0x180000000",
+  "sizeimage": 319488,
+  "extent": 305152,
+  "dllname": "bcrypt_rust.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 35997192,
+  "machine": "0x8664",
+  "sections": 5,
+  "is64": true,
+  "entry": "0x6db370",
+  "imagebase": "0x180000000",
+  "sizeimage": 9920512,
+  "extent": 9897472,
+  "dllname": "cryptography_rust.dll",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".reloc"
+  ]
+ },
+ {
+  "offset": 45894706,
+  "machine": "0x8664",
+  "sections": 6,
+  "is64": true,
+  "entry": "0x4f334",
+  "imagebase": "0x180000000",
+  "sizeimage": 421888,
+  "extent": 405504,
+  "dllname": "_sodium.pyd",
+  "secs": [
+   ".text",
+   ".rdata",
+   ".data",
+   ".pdata",
+   ".rsrc",
+   ".reloc"
+  ]
+ }
+]

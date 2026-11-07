@@ -1,0 +1,13 @@
+{
+ "menu_extract_factory_mim": "0x181126a0e",
+ "menu_change_superuser_pwd": "0x181125d74",
+ "menu_trigger_ota": "0x18112701d",
+ "menu_openwrt_troll": "0x181126dce",
+ "extract_live_credentials": "0x18112499e",
+ "_enc_post": "0x18111b144",
+ "login_nonce": "0x18111af34",
+ "config_toolkit.json": "0x18111a4a1",
+ "Factory_MIM_doc": "0x1811218c3",
+ "lookup_potfile": "0x181121df3",
+ "triggerOtaPollingFromPortal": "0x18112737d"
+}

@@ -1,0 +1,32 @@
+# Rust / C / C++ build artifacts (di root proyek)
+/target/
+/build/
+*.o
+*.obj
+*.pdb
+*.d
+Cargo.lock
+
+# Python / cache artifacts
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+# Runtime & credential artifacts (jangan pernah di-commit)
+config_toolkit.json
+fastmile_key
+fastmile_key.pub
+image_backup/
+*.potfile
+target_crack.txt
+
+# Editor & OS files
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+.idea/
+.vscode/
