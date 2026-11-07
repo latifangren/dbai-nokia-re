@@ -157,6 +157,45 @@ impl MD5Validator {
             entries,
         })
     }
+
+    /// Memverifikasi MD5 dan secara otomatis memanggil `redump_fn` hingga `max_retries` (default 3) kali untuk partisi yang korup/hilang (`SPEC.md` §5.4).
+    pub fn verify_with_auto_retry<F>(
+        target_dir: &Path,
+        max_retries: usize,
+        mut redump_fn: F,
+    ) -> io::Result<VerifySummary>
+    where
+        F: FnMut(&str) -> Result<(), String>,
+    {
+        let mut summary = Self::verify(target_dir)?;
+        let mut attempt = 0usize;
+
+        while (summary.corrupt_count > 0 || summary.missing_count > 0) && attempt < max_retries {
+            attempt += 1;
+            let failed_list: Vec<String> = summary
+                .entries
+                .iter()
+                .filter(|e| {
+                    matches!(
+                        e.status,
+                        VerifyStatus::Corrupt { .. } | VerifyStatus::Missing { .. }
+                    )
+                })
+                .map(|e| e.filename.clone())
+                .collect();
+
+            if failed_list.is_empty() {
+                break;
+            }
+
+            for rel_name in &failed_list {
+                let _ = redump_fn(rel_name);
+            }
+            summary = Self::verify(target_dir)?;
+        }
+
+        Ok(summary)
+    }
 }
 
 /// Mengekstrak status kesehatan eMMC dari register Extended CSD 512 byte (`offset 267, 268, 269`, `SPEC.md` §5.3 #4).

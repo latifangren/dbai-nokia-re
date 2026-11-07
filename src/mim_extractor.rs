@@ -1,7 +1,8 @@
 use std::collections::BTreeMap;
-use std::fs::File;
+use std::fs::{self, File};
 use std::io::{self, Read, Seek, SeekFrom};
-use std::path::Path;
+use std::path::{Path, PathBuf};
+use base64::{engine::general_purpose::STANDARD as B64_STD, Engine as _};
 
 /// Magic needle pada partisi `Factory_MIM` (`SPEC.md` §7.1 #1 `mod_consts[820]`).
 pub const MIM_MAGIC_NEEDLE: &[u8] = b"5GGW2-OMNI-2\0";
@@ -160,6 +161,76 @@ impl FactoryMIMExtractor {
             get("ProgDate", "Unknown"),
         )
     }
+
+    /// Mendekode field `Password` pada `Factory_MIM` dari Base64 (32 byte digest biner) menjadi 64 karakter hex SHA-256 (`SPEC.md` §7.1 #1).
+    pub fn decode_mim_password_sha256_hex(b64_val: &str) -> Option<String> {
+        let raw = B64_STD.decode(b64_val.trim().as_bytes()).ok()?;
+        if raw.len() != 32 {
+            return None;
+        }
+        Some(hex::encode(raw))
+    }
+
+    /// Mencari nilai hash heksadesimal pada berkas potfile Hashcat standar maupun jalur kustom (`SPEC.md` §7.1 #5 `lookup_potfile`).
+    pub fn lookup_potfile(target_hex_hash: &str, extra_paths: &[&Path]) -> Option<String> {
+        let needle = target_hex_hash.trim().to_lowercase();
+        if needle.is_empty() {
+            return None;
+        }
+
+        let mut candidates: Vec<PathBuf> = extra_paths.iter().map(|p| p.to_path_buf()).collect();
+        candidates.push(PathBuf::from("potfile_nokia.txt"));
+        candidates.push(PathBuf::from("tools/hashcat-8.0.0/hashcat.potfile"));
+        if let Ok(home) = std::env::var("HOME") {
+            let h = Path::new(&home);
+            candidates.push(h.join(".hashcat/hashcat.potfile"));
+            candidates.push(h.join(".local/share/hashcat/hashcat.potfile"));
+        }
+
+        for pot_path in candidates {
+            let Ok(content) = fs::read_to_string(&pot_path) else {
+                continue;
+            };
+            for line in content.lines() {
+                if let Some((hash_part, plain_part)) = line.split_once(':') {
+                    if hash_part.trim().eq_ignore_ascii_case(&needle) {
+                        return Some(plain_part.to_string());
+                    }
+                }
+            }
+        }
+        None
+    }
+
+    /// Mengekstrak blok `Factory_MIM` secara otomatis dari direktori backup (`Factory_MIM.img` atau berkas `.img` lainnya, `SPEC.md` §7.1 #4).
+    pub fn extract_from_folder(
+        folder_path: &Path,
+    ) -> io::Result<(BTreeMap<String, String>, String)> {
+        let direct = folder_path.join("Factory_MIM.img");
+        if direct.is_file() {
+            let (entries, _) = Self::scan_file_or_dump(&direct)?;
+            if !entries.is_empty() {
+                return Ok((entries, format!("{}", direct.display())));
+            }
+        }
+        if folder_path.is_dir() {
+            for entry in fs::read_dir(folder_path)? {
+                let entry = entry?;
+                let p = entry.path();
+                if p.is_file() {
+                    if let Ok((entries, label)) = Self::scan_file_or_dump(&p) {
+                        if !entries.is_empty() {
+                            return Ok((entries, label));
+                        }
+                    }
+                }
+            }
+        }
+        Ok((
+            BTreeMap::new(),
+            "Factory_MIM tidak ditemukan di folder".to_string(),
+        ))
+    }
 }
 
 #[cfg(test)]
@@ -177,5 +248,19 @@ mod tests {
         let parsed = FactoryMIMExtractor::parse_mim_block(&block);
         assert_eq!(parsed.get("Product").map(|s| s.as_str()), Some("5GGW2-OMNI-2"));
         assert_eq!(parsed.get("SN").map(|s| s.as_str()), Some("NK1234567890"));
+    }
+
+    #[test]
+    fn test_decode_mim_password_and_potfile_lookup() {
+        let digest = [0xabu8; 32];
+        let b64 = B64_STD.encode(digest);
+        let hex_hash = FactoryMIMExtractor::decode_mim_password_sha256_hex(&b64).unwrap();
+        assert_eq!(hex_hash, "ab".repeat(32));
+
+        let tmp_pot = std::env::temp_dir().join("dbai_test_potfile.pot");
+        fs::write(&tmp_pot, format!("{}:NokiaPass2026\n", hex_hash)).unwrap();
+        let found = FactoryMIMExtractor::lookup_potfile(&hex_hash, &[tmp_pot.as_path()]);
+        let _ = fs::remove_file(&tmp_pot);
+        assert_eq!(found.as_deref(), Some("NokiaPass2026"));
     }
 }
