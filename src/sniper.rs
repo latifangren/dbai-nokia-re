@@ -251,6 +251,10 @@ impl SshSession {
             "ServerAliveInterval=5".to_string(),
             "-o".to_string(),
             "ServerAliveCountMax=3".to_string(),
+            "-o".to_string(),
+            "HostKeyAlgorithms=+ssh-rsa".to_string(),
+            "-o".to_string(),
+            "PubkeyAcceptedAlgorithms=+ssh-rsa".to_string(),
         ];
         if self.key_path.exists() {
             args.push("-i".to_string());

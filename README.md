@@ -35,27 +35,37 @@
 
 Perangkat lunak ini dirancang untuk beroperasi secara mandiri tanpa memerlukan instalasi interpreter bahasa tingkat tinggi (seperti Python) atau runtime eksternal. Seluruh interaksi jaringan dengan modem (protokol Web CGI, handshaking SSH, HTTP binary serving, dan TCP stream receiving) diimplementasikan secara murni dengan performa tinggi, keamanan memori (*memory safety*), dan konkurensi native.
 
-### Perbandingan Arsitektur (Why)
-Biner orisinal alat ini (`dbai-nokia-win64.exe`) dibangun menggunakan kompilator Nuitka Onefile yang membundel interpreter CPython 3.13 beserta berbagai ekstensi dinamis. Arsitektur tersebut memiliki sejumlah kelemahan operasional signifikan:
+### Perbandingan Arsitektur & Fakta Forensik Biner Asli (Why)
 
-1. **Overhead Ukuran Biner:** Biner lama berukuran **~46,3 MB** (`46.329.344` byte) karena menyertakan seluruh runtime CPython (`python313.dll`), OpenSSL (`libcrypto-3.dll`), serta modul ekstensi kriptografi (`cryptography_rust.dll`).
-2. **Ekstraksi Berkas Sementara ke Disk (%TEMP% Pollution):** Setiap kali biner lama dieksekusi, lapisan *bootloader* Nuitka mengekstrak **36 berkas pustaka** ke dalam subdirektori acak `%TEMP%\onefile_{PID}_{TIME}_{RANDOM}`. Hal ini memicu latensi startup yang tinggi, keausan storage pada PC pengguna, dan meninggalkan sampah berkas jika aplikasi dimatikan secara mendadak.
-3. **Ketergantungan Ekstraksi Aset Modem:** Komponen biner ARM pembantu (`bin/busybox` dan `bin/test_decrypt_node`) diekstrak terlebih dahulu ke media penyimpanan PC sebelum disajikan ke modem.
+Di repositori aslinya (`armarchindo/nokia-gateway-2`), rilis awal hingga v1.1 diklaim sebagai *"Compiled to native C machine code"* dan *"Zero-Dependency"*. Namun, hasil audit forensik statis terhadap biner aslinya (`dbai-nokia-win64.exe` & `dbai-nokia-linux-x86_64`) membuktikan bahwa **aplikasi aslinya adalah script Python (`dbai_nokia.py`), bukan program C/C++ native murni**:
 
-Implementasi **`dbai-nokia-rs`** mengatasi seluruh kelemahan tersebut:
+1. **Mitos "Native C" vs Fakta Bundel Python (Nuitka Onefile):**
+   - Biner luar `dbai-nokia-win64.exe` (`46.329.344` byte / **~46,3 MB**) merupakan *bootloader* pengekstrak Nuitka Onefile (seksi `.text` hanya 67 KiB) yang menyimpan arsip tak terkompresi bermagic `"KAX"` pada offset `0x10c00`.
+   - Di dalam arsip `KAX` tersebut tertanam **36 berkas**, termasuk seluruh interpreter **CPython 3.13.14 (`python313.dll`, 6,13 MB)**, pustaka OpenSSL (`libcrypto-3.dll`, 5,23 MB), modul Python `cryptography` (`_rust.pyd`, 9,89 MB), serta modul `paramiko` (`_bcrypt.pyd` & `_sodium.pyd`).
+   - Kode aplikasi utamanya (`dbai_nokia.dll` / `dbai_nokia.py` ~3.000 baris) tetap bergantung penuh pada runtime CPython (`PyObject_Call`, dictionary lookup Python, serta blob konstanta Python `__constants.bin` yang memuat `1.583` objek `mod_consts`).
+2. **Inkonsistensi Rilis Linux Asli (Masih Tertinggal di Versi 1.0):**
+   - Pada halaman rilis resmi v1.1 (`nokia_hifiair_tools_v1_1`), biner **`dbai-nokia-linux-x86_64`** (`40,5 MB`) yang dibagikan ternyata **masih berisi kode lama versi 1.0 (`V1.0`, CPython 3.12)**.
+   - Biner Linux asli tersebut **tidak memiliki** kelas `FactoryMIMExtractor`, Menu `[i]` (Ekstraksi Kredensial & `test_decrypt_node`), Menu `[s]` (SuperAdmin Password), Menu `[m]` (Trigger OTA), Menu `[r]` (Unroot), maupun Menu `[n]`. Hanya biner Windows-nya yang diperbarui ke v1.1.
+3. **Ekstraksi Berkas Sementara ke Disk (`%TEMP%` / `/tmp` Pollution):**
+   - Setiap kali biner lama dieksekusi, lapisan *bootloader* Nuitka mengekstrak **36 berkas pustaka** ke dalam subdirektori acak `%TEMP%\onefile_{PID}_{TIME}_{RANDOM}`. Hal ini memicu latensi startup yang tinggi, keausan storage pada PC pengguna, dan meninggalkan sampah berkas jika aplikasi dimatikan secara mendadak.
+4. **Ketergantungan Ekstraksi Aset Modem:**
+   - Komponen biner ARM pembantu (`bin/busybox` dan `bin/test_decrypt_node`) diekstrak terlebih dahulu ke media penyimpanan PC sebelum disajikan ke modem.
+
+Implementasi **`dbai-nokia-rs`** mengatasi seluruh kelemahan tersebut sebagai **100% True Native Rust** untuk **Linux (`amd64` & `arm64`)** dan **Windows Native (`.exe` tanpa WSL)**:
 - **Ukuran Sangat Ramping (~4,4 MB):** Dibuat sebagai *single static binary* murni yang dioptimasi dengan Link-Time Optimization (`lto = true`), `opt-level = "z"`, dan penghapusan simbol debug (`strip = true`).
 - **Aset Tertanam Langsung di `.rodata`:** Berkas pembantu arsitektur target—yaitu `assets/busybox` (ELF32 ARM static, 1.148.524 byte) dan `assets/test_decrypt_node` (ELF64 AArch64, 131.593 byte)—disematkan langsung ke dalam segmen memori baca-saja (`.rodata`) biner executable melalui makro `include_bytes!`.
 - **Nol Ekstraksi Disk PC:** Server HTTP internal melayani berkas langsung dari irisan memori RAM (`&[u8]`). Tidak ada berkas sementara yang pernah dibuat di disk PC host selama siklus serving aset.
-- **Startup Instan & Aman:** Menghilangkan overhead ekstraksi arsip `KAX` dan inisialisasi runtime Python, menghasilkan waktu respons instan (< 10 ms).
+- **Startup Instan & Paritas Penuh v1.1 Lintas OS:** Menghilangkan overhead ekstraksi arsip `KAX` dan inisialisasi runtime Python (< 15 ms), serta membawa seluruh fitur v1.1 secara utuh ke Linux dan Windows.
 
-| Parameter Arsitektural | Biner Lama (Nuitka / CPython 3.13) | `dbai-nokia-rs` v1.1.0 (Rust Native) |
+| Parameter Arsitektural | Biner Asli (Nuitka / CPython 3.13 & 3.12) | `dbai-nokia-rs` v1.1.0 (Rust Native) |
 |---|---|---|
-| **Ukuran Executable** | ~46,3 MB (`46.329.344` B) | **~4,4 MB** (`4.613.736` B) |
+| **Bahasa & Runtime Sebenarnya** | Script Python (`dbai_nokia.py`) + CPython Runtime | **100% Native Rust Machine Code (Tanpa Python)** |
+| **Ukuran Executable** | ~46,3 MB (Windows) / ~40,5 MB (Linux) | **~4,4 MB** (`4.613.736` B) — **~90% lebih kecil** |
+| **Kelengkapan Fitur v1.1 di Linux** | **Tidak Lengkap** (Biner Linux asli masih kode `V1.0`) | **100% Lengkap v1.1** di Linux (`amd64`/`arm64`) & Windows (`.exe`) |
 | **Penyajian Aset (`busybox`)** | Ekstrak ke `%TEMP%` disk PC lalu baca file | **Tertanam di `.rodata` RAM (In-Memory HTTP)** |
-| **Startup Latency** | 1.500 – 3.000 ms (I/O unpacking) | **< 15 ms (Native initialization)** |
-| **Dependensi Eksternal PC** | Visual C++ Redistributable, Python DLLs | **Nol dependensi (Hanya OpenSSH `ssh` di PATH)** |
-| **Manajemen Memori** | Garbage Collection CPython + Reference Count | **Compile-Time RAII & Zero-Cost Abstractions** |
-| **Keamanan Thread** | Global Interpreter Lock (GIL) | **Multi-threading sejati (std::thread / Arc / Atomics)** |
+| **Startup Latency** | 1.500 – 3.000 ms (I/O unpacking 36 file) | **< 15 ms (Native initialization)** |
+| **Dependensi Eksternal PC** | Visual C++ Redistributable, Python DLLs/SOs | **Nol dependensi (Hanya OpenSSH `ssh` di PATH)** |
+| **Manajemen Memori & Thread** | GC CPython + Global Interpreter Lock (GIL) | **Compile-Time RAII & Multi-threading Sejati** |
 
 ---
 
@@ -91,6 +101,9 @@ Menyediakan modul komunikasi client HTTP terhadap endpoint CGI bawaan modem Noki
      $$\text{'+'} \longrightarrow \text{'-'}, \quad \text{'/'} \longrightarrow \text{'_'}, \quad \text{'='} \longrightarrow \text{'.'}$$
    - **Langkah 4 (Enkripsi Payload Hibrida):** Mengenkripsi muatan data login menggunakan kombinasi `AES-128-CBC` (padding PKCS#7) dengan kunci acak dan IV acak. Kunci simetris tersebut dienkripsi menggunakan `RSA-PKCS1v15` dengan kunci publik modem.
 2. **Proteksi Token Sesi & CSRF:** Menangani session cookie dan mem-parsing parameter `csrf_token` dari respons server web untuk mengamankan panggilan POST administratif lanjutan (seperti `/reboot_web_app.cgi`).
+3. **Injeksi RCE TR-369 & Deploy Detector (`set_params`, `execute_rce`, `deploy_detector`):**
+   - Mengirimkan konfigurasi parameter TR-369/USP MQTT ke `/tr369_web_app.cgi?set_params` dan mengeksekusi perintah shell melalui injeksi backtick ``mqtt_brokeraddress=127.0.0.1`{cmd}` `` serta membaca hasil eksekusi dari `/tr369_status_web_app.cgi`.
+   - Menanamkan kunci publik SSH (`/configs/nonpersistant/fastmile_key`), skrip *autonomous keeper* (`/configs/nonpersistant/fastmile_keeper.sh`), skrip detector (`/configs/nonpersistant/fastmile_detector`), mem-patch `/configs/init_action.sh`, dan membajak `/etc/hb/aic_conf.json` $\rightarrow$ `/configs/aic_conf.json` agar SSH root port `2222` otomatis menyala saat modem boot.
 
 ### In-Memory Background Servers (`src/servers.rs`)
 Menyediakan dua layanan server latar belakang multi-thread independen yang dirancang khusus untuk meminimalkan beban I/O pada storage PC:
@@ -297,11 +310,12 @@ Saat aplikasi dijalankan, layar utama akan menampilkan banner status koneksi jar
 ╔════════════════════════════════════════════════════════════════════════════╗
 ║  DBAI-NOKIA: Nokia FastMile 5G GW2 Native Toolkit (v1.1-rs)                ║
 ║  Modem IP: 192.168.1.1 | PC LAN IP: 192.168.1.2 | Output: image_backup     ║
+║  Platform: linux | SSH Status: Belum Terkoneksi (!)                        ║
 ╚════════════════════════════════════════════════════════════════════════════╝
 
   [a] Full Pipeline (Auto: Keys -> Root -> Reboot -> Servers -> Dump -> MD5 -> Creds)
   [1] Periksa / Generate Pasangan SSH Key (RSA 2048-bit)
-  [2] Uji Login Web CGI Nokia (Iterated SHA-256)
+  [2] Aktivasi SSH (ROOT) via Injeksi TR-369
   [3] Trigger Reboot Modem (/reboot_web_app.cgi atau SSH)
   [4] Mulai SSH Sniper & Buka Terminal Interaktif
   [5] Jalankan Background Server (HTTP:8081 + TCP:8888)
@@ -321,11 +335,11 @@ Saat aplikasi dijalankan, layar utama akan menampilkan banner status koneksi jar
 
 | Tombol Menu | Fungsi & Alur Operasi | Keterangan & Detail Teknis |
 |:---:|---|---|
-| **`[a]`** | **Full Automation Pipeline** | Menjalankan seluruh proses otomatis dari awal hingga akhir: pembuatan SSH key $\to$ verifikasi root $\to$ reboot $\to$ peluncuran background server $\to$ streaming dump 52 partisi $\to$ validasi MD5 dengan auto-redump $\to$ ekstraksi kredensial pabrik. |
+| **`[a]`** | **Full Automation Pipeline** | Menjalankan seluruh proses otomatis 7 tahap dari awal hingga akhir: pembuatan SSH key $\to$ aktivasi root TR-369 (bila SSH belum aktif) $\to$ peluncuran background server $\to$ reboot & pantau shutdown $\to$ SSH Sniper $\to$ streaming dump 52 partisi + validasi MD5 auto-redump $\to$ ekstraksi kredensial pabrik. |
 | **`[1]`** | **Periksa / Generate SSH Key** | Memeriksa keberadaan `fastmile_key` dan `fastmile_key.pub`. Jika belum ada, membangkitkan pasangan kunci RSA 2048-bit baru dan menerapkan permission aman (`0600`/`icacls`). |
-| **`[2]`** | **Uji Login Web CGI Nokia** | Menjalankan protokol autentikasi 4 langkah terhadap `/login_web_app.cgi` menggunakan iterated SHA-256 dan enkripsi AES-CBC + RSA untuk memvalidasi kredensial Web GUI modem. |
+| **`[2]`** | **Aktivasi SSH (ROOT) via TR-369** | Melakukan login Web CGI (iterated SHA-256 + enkripsi AES-CBC/RSA), menginjeksi payload detector (`fastmile_detector`, `fastmile_keeper.sh`, & hook `/configs/aic_conf.json`) via TR-369 RCE, dan menawarkan reboot modem. |
 | **`[3]`** | **Trigger Reboot Modem** | Mengirimkan sinyal reboot ke modem secara elegan, baik melalui command SSH (`reboot`) jika sesi aktif tersedia, atau melalui request Web CGI terotentikasi (`/reboot_web_app.cgi`). |
-| **`[4]`** | **Mulai SSH Sniper & Terminal** | Mengaktifkan pemantauan siklus shutdown 4 port, menunggu modem menyelesaikan booting baru (`uptime <= 90s`), memasang watchdog in-memory, dan membuka shell interaktif langsung ke konsol root modem. |
+| **`[4]`** | **Mulai SSH Sniper & Terminal** | Mengaktifkan pemantauan siklus shutdown 4 port, menunggu modem menyelesaikan booting baru (`uptime <= 90s`), menjalankan hardening SSH & memasang watchdog in-memory, lalu membuka shell interaktif langsung ke konsol root modem. |
 | **`[5]`** | **Jalankan Background Server** | Menjalankan server HTTP port `8081` (in-memory `.rodata` serving) dan server TCP receiver port `8888` pada background thread secara manual. |
 | **`[6]`** | **Full Dump Partisi eMMC** | Memulai proses streaming 50 partisi user-area, partisi bootloader (`boot0`/`boot1`), serta register biner `ext_csd.bin`, `CID.txt`, dan `CSD.txt` melalui pipa jaringan TCP port 8888. |
 | **`[7]`** | **Verifikasi Hash MD5 Checksum** | Membandingkan hash MD5 berkas hasil dump lokal dengan catatan resmi modem (`/tmp/md5sums.txt`). Otomatis mengecualikan partisi `WAJAR-RW` dan memicu *auto-redump* hingga 3x jika ditemukan kegagalan. |
@@ -333,7 +347,7 @@ Saat aplikasi dijalankan, layar utama akan menampilkan banner status koneksi jar
 | **`[n]`** | **Flash OpenWrt (Easter Egg)** | Simulasi interaktif lelucon komunitas (*community easter egg*) yang menampilkan animasi flashing tanpa menyentuh atau menulis apa pun ke media penyimpanan modem. |
 | **`[s]`** | **Ubah Password SuperAdmin** | Menghitung hash `SHA-256 UPPERCASE` dari kata sandi baru (default: `DBAI2K27`) dan memperbarui entri akun SuperAdmin Web GUI via `cfgcli`. |
 | **`[i]`** | **Ekstraksi Kredensial Pabrik** | Menawarkan 2 mode ekstraksi: **[1] Live via SSH** (membaca blok `Factory_MIM`, bayangan `/etc/shadow`, dan mengeksekusi `test_decrypt_node`) atau **[2] Offline** (memindai berkas `.img` atau full dump disk mentah). |
-| **`[r]`** | **Unroot & Cleanup Artefak** | Menghentikan skrip watchdog penjaga root, menghapus seluruh payload sementara dari `/tmp` dan `/configs/`, membersihkan jejak modifikasi, dan menawarkan opsi reboot bersih. |
+| **`[r]`** | **Unroot & Cleanup Artefak** | Menghentikan skrip watchdog penjaga root dan menghapus seluruh payload dari `/tmp` serta `/configs/` melalui **SSH aktif** maupun **fallback Web Management API (TR-369 RCE)**, lalu menawarkan opsi reboot bersih. |
 | **`[k]`** | **Ubah Pengaturan Konfigurasi** | Menu konfigurasi interaktif untuk mengubah IP modem, port server HTTP/TCP, password, direktori backup, dan menyimpannya secara permanen ke `config_toolkit.json`. |
 | **`[m]`** | **Trigger Nokia Cloud FOTA** | Menjalankan prosedur 5 langkah untuk mengaktifkan modul software management TR-069, me-restart service `swmgnt`, dan memicu sinyal D-Bus untuk pembaruan OTA resmi. |
 | **`[0]`** | **Keluar** | Menghentikan seluruh background server secara aman dan menutup aplikasi CLI. |
