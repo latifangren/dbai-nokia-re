@@ -57,6 +57,38 @@ pub fn check_free_disk_space_gb(target_dir: &Path) -> io::Result<f64> {
         }
     }
 
+    #[cfg(windows)]
+    {
+        use std::os::windows::ffi::OsStrExt;
+        #[link(name = "kernel32")]
+        extern "system" {
+            fn GetDiskFreeSpaceExW(
+                lpDirectoryName: *const u16,
+                lpFreeBytesAvailableToCaller: *mut u64,
+                lpTotalNumberOfBytes: *mut u64,
+                lpTotalNumberOfFreeBytes: *mut u64,
+            ) -> i32;
+        }
+        let abs_path = std::fs::canonicalize(&check_path).unwrap_or(check_path);
+        let wide: Vec<u16> = abs_path
+            .as_os_str()
+            .encode_wide()
+            .chain(std::iter::once(0))
+            .collect();
+        let mut free_avail: u64 = 0;
+        let ok = unsafe {
+            GetDiskFreeSpaceExW(
+                wide.as_ptr(),
+                &mut free_avail,
+                std::ptr::null_mut(),
+                std::ptr::null_mut(),
+            )
+        };
+        if ok != 0 {
+            return Ok((free_avail as f64) / (1024.0 * 1024.0 * 1024.0));
+        }
+    }
+
     Ok(100.0)
 }
 

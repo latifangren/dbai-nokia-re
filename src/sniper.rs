@@ -157,19 +157,30 @@ impl SshSession {
     }
 
     pub fn create_askpass_helper() -> io::Result<PathBuf> {
-        let askpass_path =
-            std::env::temp_dir().join(format!("dbai_askpass_{}.sh", std::process::id()));
-        let script = "#!/bin/sh\nprintf '%s\\n' \"$DBAI_SSH_PASS\"\n";
-        std::fs::write(&askpass_path, script)?;
-        #[cfg(unix)]
+        #[cfg(windows)]
         {
-            use std::os::unix::fs::PermissionsExt;
-            if let Ok(mut perms) = std::fs::metadata(&askpass_path).map(|m| m.permissions()) {
-                perms.set_mode(0o700);
-                let _ = std::fs::set_permissions(&askpass_path, perms);
-            }
+            let askpass_path =
+                std::env::temp_dir().join(format!("dbai_askpass_{}.cmd", std::process::id()));
+            let script = "@echo off\r\necho %DBAI_SSH_PASS%\r\n";
+            std::fs::write(&askpass_path, script)?;
+            return Ok(askpass_path);
         }
-        Ok(askpass_path)
+        #[cfg(not(windows))]
+        {
+            let askpass_path =
+                std::env::temp_dir().join(format!("dbai_askpass_{}.sh", std::process::id()));
+            let script = "#!/bin/sh\nprintf '%s\\n' \"$DBAI_SSH_PASS\"\n";
+            std::fs::write(&askpass_path, script)?;
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::PermissionsExt;
+                if let Ok(mut perms) = std::fs::metadata(&askpass_path).map(|m| m.permissions()) {
+                    perms.set_mode(0o700);
+                    let _ = std::fs::set_permissions(&askpass_path, perms);
+                }
+            }
+            Ok(askpass_path)
+        }
     }
 
     /// Melakukan polling port `(2222, 22)` hingga sesi SSH siap dan (opsional) memverifikasi `/proc/uptime <= 90.0` (`SPEC.md` §5.2).
@@ -220,13 +231,18 @@ impl SshSession {
     }
 
     fn base_ssh_args(&self, connect_timeout_secs: u64) -> Vec<String> {
+        let known_hosts_null = if cfg!(windows) {
+            "UserKnownHostsFile=NUL"
+        } else {
+            "UserKnownHostsFile=/dev/null"
+        };
         let mut args = vec![
             "-p".to_string(),
             self.port.to_string(),
             "-o".to_string(),
             "StrictHostKeyChecking=no".to_string(),
             "-o".to_string(),
-            "UserKnownHostsFile=/dev/null".to_string(),
+            known_hosts_null.to_string(),
             "-o".to_string(),
             "LogLevel=ERROR".to_string(),
             "-o".to_string(),
@@ -574,7 +590,7 @@ mod tests {
 
         let content =
             std::fs::read_to_string(&askpass_path).expect("failed to read askpass helper");
-        assert!(content.contains("$DBAI_SSH_PASS"));
+        assert!(content.contains("DBAI_SSH_PASS"));
 
         let _ = std::fs::remove_file(&askpass_path);
         assert!(!askpass_path.exists(), "askpass helper should be removed");
