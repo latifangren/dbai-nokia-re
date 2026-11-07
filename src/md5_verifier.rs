@@ -1,7 +1,7 @@
+use md5::{Digest, Md5};
 use std::fs::{self, File};
 use std::io::{self, Read};
 use std::path::Path;
-use md5::{Digest, Md5};
 
 /// Daftar partisi RW yang dikecualikan (`WAJAR-RW`) saat verifikasi live dump (`SPEC.md` §3.2 #10 & §5.4).
 pub const EXCLUDED_PARTITIONS: &[&str] = &[
@@ -105,7 +105,10 @@ impl MD5Validator {
             let file_path = target_dir.join(rel_file);
             if !file_path.is_file() {
                 missing_count += 1;
-                report_lines.push(format!("[HILANG]     {} (Ekspektasi: {})", rel_file, expected_md5));
+                report_lines.push(format!(
+                    "[HILANG]     {} (Ekspektasi: {})",
+                    rel_file, expected_md5
+                ));
                 entries.push(PartitionVerifyResult {
                     filename: rel_file.to_string(),
                     status: VerifyStatus::Missing {
@@ -305,7 +308,7 @@ mod tests {
         let summary = MD5Validator::verify(&temp_dir).unwrap();
         assert_eq!(summary.valid_count, 1);
         assert_eq!(summary.missing_count, 1); // normal.img is missing
-        // ../escape.img was skipped due to Component::ParentDir
+                                              // ../escape.img was skipped due to Component::ParentDir
         assert_eq!(summary.entries.len(), 2);
 
         let _ = fs::remove_dir_all(&temp_dir);

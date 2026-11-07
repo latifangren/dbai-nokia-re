@@ -1,8 +1,8 @@
+use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
 use std::net::UdpSocket;
 use std::path::{Path, PathBuf};
-use serde::{Deserialize, Serialize};
 
 pub const CONFIG_FILENAME: &str = "config_toolkit.json";
 

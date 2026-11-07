@@ -474,7 +474,13 @@ mod tests {
 
     #[test]
     fn test_update_health_from_extcsd_jedec_offsets() {
-        let temp_dir = std::env::temp_dir().join(format!("test_extcsd_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let temp_dir = std::env::temp_dir().join(format!(
+            "test_extcsd_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let non_user = temp_dir.join("non-userarea");
         fs::create_dir_all(&non_user).unwrap();
 
@@ -488,11 +494,20 @@ mod tests {
         let res = DumperEngine::update_health_from_extcsd(&temp_dir).unwrap();
         assert!(res.is_some());
         let content = fs::read_to_string(non_user.join("info_eMMC.txt")).unwrap();
-        let line_eol = content.lines().find(|l| l.contains("PRE_EOL_INFO (Offset 267)")).unwrap();
+        let line_eol = content
+            .lines()
+            .find(|l| l.contains("PRE_EOL_INFO (Offset 267)"))
+            .unwrap();
         assert!(line_eol.contains("Normal"));
-        let line_a = content.lines().find(|l| l.contains("DEVICE_LIFE_TIME_EST_TYP_A (Offset 268)")).unwrap();
+        let line_a = content
+            .lines()
+            .find(|l| l.contains("DEVICE_LIFE_TIME_EST_TYP_A (Offset 268)"))
+            .unwrap();
         assert!(line_a.contains("10% - 20%"));
-        let line_b = content.lines().find(|l| l.contains("DEVICE_LIFE_TIME_EST_TYP_B (Offset 269)")).unwrap();
+        let line_b = content
+            .lines()
+            .find(|l| l.contains("DEVICE_LIFE_TIME_EST_TYP_B (Offset 269)"))
+            .unwrap();
         assert!(line_b.contains("20% - 30%"));
 
         let _ = fs::remove_dir_all(&temp_dir);

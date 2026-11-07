@@ -1,8 +1,8 @@
+use rand::rngs::OsRng;
+use ssh_key::{Algorithm, LineEnding, PrivateKey};
 use std::fs;
 use std::io;
 use std::path::{Path, PathBuf};
-use rand::rngs::OsRng;
-use ssh_key::{Algorithm, LineEnding, PrivateKey};
 
 pub struct SSHKeyManager;
 
@@ -108,7 +108,8 @@ mod tests {
         assert!(!pub_path.is_file());
 
         // 3. Call ensure_keys again
-        let (priv_path2, pub_str2) = SSHKeyManager::ensure_keys(key_base_str).expect("recover pub key");
+        let (priv_path2, pub_str2) =
+            SSHKeyManager::ensure_keys(key_base_str).expect("recover pub key");
         assert_eq!(priv_path, priv_path2);
         assert!(pub_path.is_file());
         assert_eq!(pub_str, pub_str2);

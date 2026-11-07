@@ -1,9 +1,9 @@
+use sha2::{Digest, Sha256};
 use std::io::{self, Read, Write};
 use std::net::{IpAddr, SocketAddr, TcpStream};
 use std::path::{Path, PathBuf};
 use std::process::{Command, Stdio};
 use std::time::{Duration, Instant};
-use sha2::{Digest, Sha256};
 
 use crate::config::Config;
 
@@ -163,7 +163,7 @@ impl SshSession {
                 std::env::temp_dir().join(format!("dbai_askpass_{}.cmd", std::process::id()));
             let script = "@echo off\r\necho %DBAI_SSH_PASS%\r\n";
             std::fs::write(&askpass_path, script)?;
-            return Ok(askpass_path);
+            Ok(askpass_path)
         }
         #[cfg(not(windows))]
         {
@@ -471,7 +471,10 @@ fi"#;
         if code == 0 {
             Ok(())
         } else {
-            Err(format!("Gagal memasang guardian: exit code {}, {}", code, stderr))
+            Err(format!(
+                "Gagal memasang guardian: exit code {}, {}",
+                code, stderr
+            ))
         }
     }
 
@@ -481,7 +484,10 @@ fi"#;
         if code == 0 {
             Ok(())
         } else {
-            Err(format!("Revoke root gagal dengan exit code {}: {}", code, stderr))
+            Err(format!(
+                "Revoke root gagal dengan exit code {}: {}",
+                code, stderr
+            ))
         }
     }
 

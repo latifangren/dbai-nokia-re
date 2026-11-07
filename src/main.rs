@@ -8,8 +8,6 @@ pub mod ssh_keys;
 pub mod ui;
 pub mod web_cgi;
 
-use std::path::{Path, PathBuf};
-use std::time::Duration;
 use config::Config;
 use dumper::{check_free_disk_space_gb, DumperEngine, MIN_FREE_DISK_GB};
 use md5_verifier::MD5Validator;
@@ -17,6 +15,8 @@ use mim_extractor::FactoryMIMExtractor;
 use servers::{BackgroundServers, BUSYBOX_BYTES, TEST_DECRYPT_NODE_BYTES};
 use sniper::{wait_for_shutdown, SshSession, DEFAULT_CHECK_PORTS};
 use ssh_keys::SSHKeyManager;
+use std::path::{Path, PathBuf};
+use std::time::Duration;
 use ui::{
     clear_screen, init_terminal, log_error, log_info, log_success, log_warn, pad_ansi, prompt_line,
     Colors,
@@ -229,8 +229,10 @@ impl DbaiNokiaApp {
                 "Subnet PC ({}) dan Modem ({}) tidak sama!",
                 self.config.pc_ip, self.config.modem_ip
             ));
-            let ans = prompt_line("[?] Modem mungkin gagal mentransfer data ke PC. Tetap lanjut? [y/N]: ")
-                .unwrap_or_default();
+            let ans = prompt_line(
+                "[?] Modem mungkin gagal mentransfer data ke PC. Tetap lanjut? [y/N]: ",
+            )
+            .unwrap_or_default();
             if !matches!(ans.trim().to_lowercase().as_str(), "y" | "yes" | "ya") {
                 return;
             }
@@ -322,7 +324,9 @@ impl DbaiNokiaApp {
                     match client.reboot_modem() {
                         Ok(true) => {
                             log_success("Sinyal reboot berhasil dikirimkan ke modem!");
-                            log_info("Memantau siklus restart hardware pada port (443, 80, 53, 2222)...");
+                            log_info(
+                                "Memantau siklus restart hardware pada port (443, 80, 53, 2222)...",
+                            );
                             let _ = wait_for_shutdown(
                                 &self.config.modem_ip,
                                 &DEFAULT_CHECK_PORTS,
@@ -385,7 +389,10 @@ impl DbaiNokiaApp {
             &self.config.web_user,
             &self.config.web_pwd,
         );
-        log_info(&format!("Menghubungi Web UI Nokia ({})...", client.base_url));
+        log_info(&format!(
+            "Menghubungi Web UI Nokia ({})...",
+            client.base_url
+        ));
         match client.login() {
             Ok(token) => {
                 self.config.is_web_authenticated = true;
@@ -440,10 +447,12 @@ impl DbaiNokiaApp {
                             );
                             reboot_sent = true;
                         }
-                        Ok(false) => {
-                            log_warn("Modem merespons status non-200 saat permintaan reboot Web CGI.")
+                        Ok(false) => log_warn(
+                            "Modem merespons status non-200 saat permintaan reboot Web CGI.",
+                        ),
+                        Err(e) => {
+                            log_error(&format!("Gagal mengirim sinyal reboot via Web CGI: {}", e))
                         }
-                        Err(e) => log_error(&format!("Gagal mengirim sinyal reboot via Web CGI: {}", e)),
                     }
                     self.web_client = Some(client);
                 }
@@ -474,7 +483,10 @@ impl DbaiNokiaApp {
             &self.config.web_user,
             &self.config.web_pwd,
         );
-        log_info(&format!("Menghubungi Web UI Nokia ({})...", client.base_url));
+        log_info(&format!(
+            "Menghubungi Web UI Nokia ({})...",
+            client.base_url
+        ));
         match client.login() {
             Ok(token) => {
                 self.config.is_web_authenticated = true;
@@ -513,7 +525,11 @@ impl DbaiNokiaApp {
         }
     }
 
-    pub fn ensure_active_ssh(&mut self, require_fresh_boot: bool, timeout_secs: u64) -> Option<SshSession> {
+    pub fn ensure_active_ssh(
+        &mut self,
+        require_fresh_boot: bool,
+        timeout_secs: u64,
+    ) -> Option<SshSession> {
         let _ = SSHKeyManager::ensure_keys(&self.config.key_name);
         if !require_fresh_boot {
             if let Some(existing) = &self.active_ssh {
@@ -525,8 +541,11 @@ impl DbaiNokiaApp {
                 &self.config.modem_ip,
                 &self.config.ssh_ports,
                 Duration::from_millis(400),
-            ) && sniper::is_any_port_open(&self.config.modem_ip, &[80], Duration::from_millis(400))
-            {
+            ) && sniper::is_any_port_open(
+                &self.config.modem_ip,
+                &[80],
+                Duration::from_millis(400),
+            ) {
                 log_warn("Port SSH [2222, 22] di modem saat ini TERTUTUP, namun Web Admin (Port 80) aktif!");
                 println!("  [1] Kirim Sinyal Reboot Resmi & Injeksi SSH Root + Mulai SSH Sniper (Rekomendasi)");
                 println!("  [2] Masuk ke mode SSH Sniper sekarang (jika modem sedang Anda reboot manual)");
@@ -597,7 +616,10 @@ impl DbaiNokiaApp {
         if let Some(ssh) = self.ensure_active_ssh(require_fresh, 240) {
             log_info("Membuka terminal SSH interaktif (ketik 'exit' untuk kembali ke menu)...");
             match ssh.open_interactive_shell() {
-                Ok(code) => log_info(&format!("Sesi terminal interaktif selesai (exit={}).", code)),
+                Ok(code) => log_info(&format!(
+                    "Sesi terminal interaktif selesai (exit={}).",
+                    code
+                )),
                 Err(e) => log_error(&format!("Gagal membuka shell interaktif: {}", e)),
             }
         }
@@ -664,7 +686,9 @@ impl DbaiNokiaApp {
                 if let Some(ref srv) = self.servers {
                     let _ = srv.tcp.wait_until_done(Duration::from_secs(10));
                 }
-                log_success("Full dump partisi eMMC selesai! Menjalankan verifikasi MD5 otomatis...");
+                log_success(
+                    "Full dump partisi eMMC selesai! Menjalankan verifikasi MD5 otomatis...",
+                );
                 self.menu_verify_md5();
             }
             Err(e) => log_error(&format!("Gagal menjalankan dump eMMC: {}", e)),
@@ -698,7 +722,10 @@ impl DbaiNokiaApp {
 
     pub fn menu_verify_md5(&mut self) {
         let dir = PathBuf::from(&self.config.backup_dir);
-        log_info(&format!("Memverifikasi manifest MD5 di {}...", dir.display()));
+        log_info(&format!(
+            "Memverifikasi manifest MD5 di {}...",
+            dir.display()
+        ));
         let cfg_clone = self.config.clone();
         let active_ssh_opt = self.active_ssh.clone();
 
@@ -767,9 +794,7 @@ impl DbaiNokiaApp {
             log_info("Mengeksekusi pembersihan hook via sesi SSH aktif...");
             match ssh.revoke_root() {
                 Ok(()) => {
-                    log_success(
-                        "File hook root di /configs berhasil dibersihkan via SSH!",
-                    );
+                    log_success("File hook root di /configs berhasil dibersihkan via SSH!");
                     cleaned = true;
                 }
                 Err(e) => {
@@ -833,7 +858,9 @@ impl DbaiNokiaApp {
         std::thread::sleep(Duration::from_millis(600));
         println!("  [!] Mengunggah citra rootfs SquashFS ke partisi eMMC...");
         std::thread::sleep(Duration::from_millis(800));
-        println!("  [!] Selesai! (Hanya simulasi / lelucon komunitas - TIDAK ADA penulisan ke flash).");
+        println!(
+            "  [!] Selesai! (Hanya simulasi / lelucon komunitas - TIDAK ADA penulisan ke flash)."
+        );
         println!("\n  [i] Tautan referensi komunitas:");
         println!("      - Repository: https://github.com/armarchindo/nokia-gateway-2");
         println!("      - Komunitas : https://web.facebook.com/groups/ihabt");
@@ -925,7 +952,9 @@ impl DbaiNokiaApp {
                         Err(e) => log_error(&format!("Gagal menyimpan laporan kredensial: {}", e)),
                     }
                 }
-                Ok((_, label)) => log_warn(&format!("Data Factory_MIM tidak ditemukan ({}).", label)),
+                Ok((_, label)) => {
+                    log_warn(&format!("Data Factory_MIM tidak ditemukan ({}).", label))
+                }
                 Err(e) => log_error(&format!("Gagal membaca berkas/folder dump: {}", e)),
             }
         }
@@ -942,7 +971,14 @@ impl DbaiNokiaApp {
                 "********"
             }
         );
-        println!(" 3. Password Root SSH  : {}", if self.config.ssh_pwd.is_empty() { "(belum diatur)" } else { "********" });
+        println!(
+            " 3. Password Root SSH  : {}",
+            if self.config.ssh_pwd.is_empty() {
+                "(belum diatur)"
+            } else {
+                "********"
+            }
+        );
         println!(" 4. Port HTTP Server   : {}", self.config.http_port);
         println!(" 5. Port TCP Receiver  : {}", self.config.tcp_port);
         println!(" 6. Folder Output      : {}", self.config.backup_dir);
@@ -1006,7 +1042,13 @@ impl DbaiNokiaApp {
                             ));
                         } else {
                             self.config.pc_ip = v.trim().to_string();
-                            let prefix = self.config.modem_ip.split('.').take(3).collect::<Vec<_>>().join(".");
+                            let prefix = self
+                                .config
+                                .modem_ip
+                                .split('.')
+                                .take(3)
+                                .collect::<Vec<_>>()
+                                .join(".");
                             self.config.is_subnet_matched = self.config.pc_ip.starts_with(&prefix);
                         }
                     }
@@ -1023,7 +1065,9 @@ impl DbaiNokiaApp {
                 let dir = PathBuf::from(&self.config.backup_dir);
                 match BackgroundServers::start(self.config.http_port, self.config.tcp_port, dir) {
                     Ok(srv) => {
-                        log_success("Background servers berhasil di-restart pada konfigurasi baru.");
+                        log_success(
+                            "Background servers berhasil di-restart pada konfigurasi baru.",
+                        );
                         self.servers = Some(srv);
                     }
                     Err(e) => log_error(&format!("Gagal me-restart server: {}", e)),
@@ -1040,7 +1084,10 @@ impl DbaiNokiaApp {
             println!("  [2] Aktivasi SSH (ROOT) via Injeksi TR-369");
             println!("  [3] Trigger Reboot Modem (/reboot_web_app.cgi atau SSH)");
             println!("  [4] Mulai SSH Sniper & Buka Terminal Interaktif");
-            println!("  [5] Jalankan Background Server (HTTP:{} + TCP:{})", self.config.http_port, self.config.tcp_port);
+            println!(
+                "  [5] Jalankan Background Server (HTTP:{} + TCP:{})",
+                self.config.http_port, self.config.tcp_port
+            );
             println!("  [6] Full Dump Partisi eMMC via SSH (52 Partisi + ext_csd)");
             println!("  [7] Verifikasi Hash MD5 Checksum (+ Auto-Retry <= 3x)");
             println!("  [8] Backup Direktori (/data & /rom/etc) [Opsional]");

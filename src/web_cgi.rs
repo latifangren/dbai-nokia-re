@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-use std::time::Duration;
 use aes::Aes128;
 use base64::engine::general_purpose::{STANDARD, URL_SAFE_NO_PAD};
 use base64::Engine;
@@ -10,6 +8,8 @@ use rsa::pkcs8::DecodePublicKey;
 use rsa::{Pkcs1v15Encrypt, RsaPublicKey};
 use serde::Deserialize;
 use sha2::{Digest, Sha256};
+use std::collections::HashMap;
+use std::time::Duration;
 
 type Aes128CbcEnc = cbc::Encryptor<Aes128>;
 
@@ -95,11 +95,17 @@ impl WebCgiClient {
     }
 
     /// Derivasi nilai `ce` dengan *iterated SHA-256* sesuai `SPEC.md` §4.3.
-    pub fn derive_ce(user: &str, pwd: &str, alati: &str, iterations: u32) -> Result<String, String> {
+    pub fn derive_ce(
+        user: &str,
+        pwd: &str,
+        alati: &str,
+        iterations: u32,
+    ) -> Result<String, String> {
         if iterations > Self::MAX_LOGIN_ITERATIONS {
             return Err(format!(
                 "Jumlah iterasi login ({}) melebihi batas maksimum ({})",
-                iterations, Self::MAX_LOGIN_ITERATIONS
+                iterations,
+                Self::MAX_LOGIN_ITERATIONS
             ));
         }
         if iterations >= 2 {
@@ -198,7 +204,9 @@ impl WebCgiClient {
             .get("token")
             .and_then(|v| v.as_str())
             .filter(|s| !s.is_empty())
-            .ok_or_else(|| "Login gagal: Token sesi tidak ditemukan. Periksa password admin!".to_string())?
+            .ok_or_else(|| {
+                "Login gagal: Token sesi tidak ditemukan. Periksa password admin!".to_string()
+            })?
             .to_string();
 
         self.session.token = token.clone();
@@ -218,8 +226,8 @@ impl WebCgiClient {
         padded.extend_from_slice(pt_bytes);
         padded.resize(pt_bytes.len() + pad_len, pad_len as u8);
 
-        let ct = Aes128CbcEnc::new(&key.into(), &iv.into())
-            .encrypt_padded_vec_mut::<NoPadding>(&padded);
+        let ct =
+            Aes128CbcEnc::new(&key.into(), &iv.into()).encrypt_padded_vec_mut::<NoPadding>(&padded);
 
         let q = format!("{} {}", Self::b64(&key), Self::b64(&iv));
         let pubkey = RsaPublicKey::from_public_key_pem(&self.session.pubkey)
@@ -441,26 +449,39 @@ mod tests {
         assert_ne!(ce1, ce2);
     }
 
-        #[test]
-        fn test_derive_ce_bounds_check() {
-            let err = WebCgiClient::derive_ce("admin", "secret", "salt", WebCgiClient::MAX_LOGIN_ITERATIONS + 1);
-            assert!(err.is_err());
-            assert!(err.unwrap_err().contains("melebihi batas"));
+    #[test]
+    fn test_derive_ce_bounds_check() {
+        let err = WebCgiClient::derive_ce(
+            "admin",
+            "secret",
+            "salt",
+            WebCgiClient::MAX_LOGIN_ITERATIONS + 1,
+        );
+        assert!(err.is_err());
+        assert!(err.unwrap_err().contains("melebihi batas"));
 
-            let ok = WebCgiClient::derive_ce("admin", "secret", "salt", 2);
-            assert!(ok.is_ok());
-        }
-
-        #[test]
-        fn test_deploy_detector_commands_and_url_encode() {
-            let encoded = WebCgiClient::url_encode_component("127.0.0.1`id`");
-            assert_eq!(encoded, "127.0.0.1%60id%60");
-
-            let cmds = WebCgiClient::build_deploy_detector_commands("ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ dbai@pc");
-            assert!(cmds.iter().any(|c| c == "mkdir -p /configs/nonpersistant"));
-            assert!(cmds.iter().any(|c| c.contains("/configs/nonpersistant/fastmile_key")));
-            assert!(cmds.iter().any(|c| c.contains("/configs/nonpersistant/fastmile_keeper.sh")));
-            assert!(cmds.iter().any(|c| c.contains("/configs/nonpersistant/fastmile_detector")));
-            assert!(cmds.iter().any(|c| c.contains("/configs/aic_conf.json")));
-        }
+        let ok = WebCgiClient::derive_ce("admin", "secret", "salt", 2);
+        assert!(ok.is_ok());
     }
+
+    #[test]
+    fn test_deploy_detector_commands_and_url_encode() {
+        let encoded = WebCgiClient::url_encode_component("127.0.0.1`id`");
+        assert_eq!(encoded, "127.0.0.1%60id%60");
+
+        let cmds = WebCgiClient::build_deploy_detector_commands(
+            "ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQ dbai@pc",
+        );
+        assert!(cmds.iter().any(|c| c == "mkdir -p /configs/nonpersistant"));
+        assert!(cmds
+            .iter()
+            .any(|c| c.contains("/configs/nonpersistant/fastmile_key")));
+        assert!(cmds
+            .iter()
+            .any(|c| c.contains("/configs/nonpersistant/fastmile_keeper.sh")));
+        assert!(cmds
+            .iter()
+            .any(|c| c.contains("/configs/nonpersistant/fastmile_detector")));
+        assert!(cmds.iter().any(|c| c.contains("/configs/aic_conf.json")));
+    }
+}

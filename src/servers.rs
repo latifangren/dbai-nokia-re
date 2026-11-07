@@ -49,7 +49,8 @@ pub fn handle_http_connection(mut conn: TcpStream) -> io::Result<Option<String>>
     };
 
     if method != "GET" && method != "HEAD" {
-        let resp = b"HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
+        let resp =
+            b"HTTP/1.1 405 Method Not Allowed\r\nContent-Length: 0\r\nConnection: close\r\n\r\n";
         conn.write_all(resp)?;
         return Ok(None);
     }
@@ -425,7 +426,8 @@ mod tests {
 
         let handle = std::thread::spawn(move || {
             let (server_conn, _) = listener.accept().unwrap();
-            let temp_dir = std::env::temp_dir().join(format!("test_reject_{}", rand::random::<u32>()));
+            let temp_dir =
+                std::env::temp_dir().join(format!("test_reject_{}", rand::random::<u32>()));
             let _ = fs::create_dir_all(&temp_dir);
             let res = handle_tcp_stream_connection(server_conn, &temp_dir);
             let _ = fs::remove_dir_all(&temp_dir);

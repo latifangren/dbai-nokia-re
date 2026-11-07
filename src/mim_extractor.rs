@@ -1,9 +1,9 @@
+use base64::{engine::general_purpose::STANDARD as B64_STD, Engine as _};
+use sha2::{Digest, Sha256};
 use std::collections::BTreeMap;
 use std::fs::{self, File};
 use std::io::{self, BufRead, Read, Seek, SeekFrom};
 use std::path::{Path, PathBuf};
-use base64::{engine::general_purpose::STANDARD as B64_STD, Engine as _};
-use sha2::{Digest, Sha256};
 
 /// Magic needle pada partisi `Factory_MIM` (`SPEC.md` §7.1 #1 `mod_consts[820]`).
 pub const MIM_MAGIC_NEEDLE: &[u8] = b"5GGW2-OMNI-2\0";
@@ -41,7 +41,8 @@ pub const KNOWN_ROOT_HASH: &str = "$5$h9AY67gazvN9fEl5$4sI08TV8DiAV/3Lgv/QZnokbi
 /// Password plaintext root pabrik (`SPEC.md` §8 baris 625).
 pub const KNOWN_ROOT_PASS: &str = "iHe,JtCJkCMetyXG";
 /// Hash shadow root toolkit FastMile (`SPEC.md` §8 baris 626).
-pub const DEFAULT_FASTMILE_HASH: &str = "$5$h9AY67gazvN9fEl5$QMQ00BPno6Bvbbr9Vxdw9M4qcB3cU759mjfTEvZp5H/";
+pub const DEFAULT_FASTMILE_HASH: &str =
+    "$5$h9AY67gazvN9fEl5$QMQ00BPno6Bvbbr9Vxdw9M4qcB3cU759mjfTEvZp5H/";
 /// Password plaintext root toolkit FastMile (`SPEC.md` §8 baris 626).
 pub const DEFAULT_FASTMILE_PASS: &str = "FastMileR00t!";
 
@@ -69,11 +70,18 @@ impl FactoryMIMExtractor {
             let k_end = k_slice.iter().position(|&b| b == 0).unwrap_or(64);
             let v_end = v_slice.iter().position(|&b| b == 0).unwrap_or(64);
 
-            let k_raw = String::from_utf8_lossy(&k_slice[..k_end]).trim().to_string();
-            let v_raw = String::from_utf8_lossy(&v_slice[..v_end]).trim().to_string();
+            let k_raw = String::from_utf8_lossy(&k_slice[..k_end])
+                .trim()
+                .to_string();
+            let v_raw = String::from_utf8_lossy(&v_slice[..v_end])
+                .trim()
+                .to_string();
 
             if !k_raw.is_empty() && k_raw.chars().all(|c| c.is_ascii_alphanumeric() || c == '_') {
-                if let Some(&canon) = KNOWN_KEYS.iter().find(|&&kk| kk.eq_ignore_ascii_case(&k_raw)) {
+                if let Some(&canon) = KNOWN_KEYS
+                    .iter()
+                    .find(|&&kk| kk.eq_ignore_ascii_case(&k_raw))
+                {
                     entries.insert(canon.to_string(), v_raw);
                 } else {
                     entries.insert(k_raw, v_raw);
@@ -301,9 +309,13 @@ impl FactoryMIMExtractor {
             hex::encode(hasher.finalize())
         });
 
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
         out.push_str("AUDIT KREDENSIAL PABRIK (Factory_MIM)\n");
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
         if let Some(pwd_b64) = entries.get("Password") {
             out.push_str(&format!("Password (Base64)        : {}\n", pwd_b64));
             if let Some(sha_hex) = Self::decode_mim_password_sha256_hex(pwd_b64) {
@@ -315,31 +327,49 @@ impl FactoryMIMExtractor {
                             in_pwd
                         ));
                     } else if let Some(plain) = Self::lookup_potfile(&sha_hex, &[]) {
-                        out.push_str(&format!("Password (Plaintext)     : {} (cracked via potfile)\n", plain));
+                        out.push_str(&format!(
+                            "Password (Plaintext)     : {} (cracked via potfile)\n",
+                            plain
+                        ));
                     } else {
                         out.push_str("Password (Plaintext)     : [Belum ter-crack di potfile]\n");
                     }
                 } else if let Some(plain) = Self::lookup_potfile(&sha_hex, &[]) {
-                    out.push_str(&format!("Password (Plaintext)     : {} (cracked via potfile)\n", plain));
+                    out.push_str(&format!(
+                        "Password (Plaintext)     : {} (cracked via potfile)\n",
+                        plain
+                    ));
                 } else {
                     out.push_str("Password (Plaintext)     : [Belum ter-crack di potfile]\n");
                 }
             }
         }
-        for key in &["ACSPassword", "ACSCRPassword", "RootPassword", "WiFiPassword"] {
+        for key in &[
+            "ACSPassword",
+            "ACSCRPassword",
+            "RootPassword",
+            "WiFiPassword",
+        ] {
             if let Some(val) = entries.get(*key) {
                 out.push_str(&format!("{:<25}: {}\n", key, val));
             }
         }
 
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
         out.push_str("AUDIT KREDENSIAL ROOT (/etc/shadow)\n");
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
         if let Some(shadow) = shadow_line {
             let (hash, pass) = Self::resolve_shadow_root_hash(shadow);
             out.push_str(&format!("Shadow Root Hash         : {}\n", hash));
             if let Some(p) = pass {
-                out.push_str(&format!("Status / Plaintext       : {} (Hardcoded / DBAI Known)\n", p));
+                out.push_str(&format!(
+                    "Status / Plaintext       : {} (Hardcoded / DBAI Known)\n",
+                    p
+                ));
             } else {
                 out.push_str("Status / Plaintext       : [Hash tidak dikenal / Belum ter-crack]\n");
             }
@@ -347,9 +377,13 @@ impl FactoryMIMExtractor {
             out.push_str("Shadow Root Hash         : [Tidak tersedia / mode offline]\n");
         }
 
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
         out.push_str("HASIL DEKRIPSI KREDENSIAL (libcfgdb.so / test_decrypt_node)\n");
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
         if decrypted_nodes.is_empty() {
             out.push_str("[Tidak ada data node terdekripsi / biner tidak dijalankan]\n");
         } else {
@@ -372,7 +406,9 @@ impl FactoryMIMExtractor {
                 }
             }
         }
-        out.push_str("================================================================================\n");
+        out.push_str(
+            "================================================================================\n",
+        );
 
         out
     }
@@ -388,9 +424,22 @@ impl FactoryMIMExtractor {
         let raw_sn = entries.get("SN").map(|s| s.as_str()).unwrap_or("UNKNOWN");
         let safe_sn: String = raw_sn
             .chars()
-            .map(|c| if c.is_ascii_alphanumeric() || c == '-' || c == '_' { c } else { '_' })
+            .map(|c| {
+                if c.is_ascii_alphanumeric() || c == '-' || c == '_' {
+                    c
+                } else {
+                    '_'
+                }
+            })
             .collect();
-        let filename = format!("info_{}.txt", if safe_sn.is_empty() { "UNKNOWN" } else { &safe_sn });
+        let filename = format!(
+            "info_{}.txt",
+            if safe_sn.is_empty() {
+                "UNKNOWN"
+            } else {
+                &safe_sn
+            }
+        );
         let path = creds_dir.join(filename);
         fs::write(&path, report)?;
         Ok(path)
@@ -407,7 +456,10 @@ impl FactoryMIMExtractor {
         let live_cmd = "((dd if=/dev/block/Factory_MIM bs=8192 count=1 2>/dev/null || head -c 8192 /dev/block/Factory_MIM 2>/dev/null) | (base64 2>/dev/null || /tmp/busybox base64 2>/dev/null)) ; echo '---SHADOW_SPLIT---' ; grep '^root:' /etc/shadow 2>/dev/null ; echo '---NODE_SPLIT---' ; mount -o remount,exec /tmp 2>/dev/null ; /tmp/test_decrypt_node 2>/dev/null";
         let (code, stdout, stderr) = ssh.exec_command(live_cmd, 25)?;
         if code != 0 && stdout.is_empty() {
-            return Err(format!("Eksekusi ekstraksi live gagal (code {}): {}", code, stderr));
+            return Err(format!(
+                "Eksekusi ekstraksi live gagal (code {}): {}",
+                code, stderr
+            ));
         }
 
         let (mim_raw, shadow_line, node_out) =
@@ -453,11 +505,9 @@ impl FactoryMIMExtractor {
             &decrypted_nodes,
             Some(&config.web_pwd),
         );
-        let saved_path = Self::save_credentials_report(
-            Path::new(&config.backup_dir),
-            &entries,
-            &report,
-        ).map_err(|e| format!("Gagal menyimpan laporan kredensial: {}", e))?;
+        let saved_path =
+            Self::save_credentials_report(Path::new(&config.backup_dir), &entries, &report)
+                .map_err(|e| format!("Gagal menyimpan laporan kredensial: {}", e))?;
 
         Ok((entries, report, saved_path))
     }
@@ -468,10 +518,10 @@ impl FactoryMIMExtractor {
             .trim()
             .trim_matches(|c| c == '"' || c == '\'')
             .trim();
-        let bytes = p.as_bytes();
-        if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
-            #[cfg(unix)]
-            {
+        #[cfg(unix)]
+        {
+            let bytes = p.as_bytes();
+            if bytes.len() >= 2 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':' {
                 let drive = (bytes[0] as char).to_ascii_lowercase();
                 let rest = p[2..].replace('\\', "/");
                 let clean_rest = rest.trim_start_matches('/');
@@ -500,7 +550,10 @@ mod tests {
         block[192..204].copy_from_slice(b"NK1234567890");
 
         let parsed = FactoryMIMExtractor::parse_mim_block(&block);
-        assert_eq!(parsed.get("Product").map(|s| s.as_str()), Some("5GGW2-OMNI-2"));
+        assert_eq!(
+            parsed.get("Product").map(|s| s.as_str()),
+            Some("5GGW2-OMNI-2")
+        );
         assert_eq!(parsed.get("SN").map(|s| s.as_str()), Some("NK1234567890"));
     }
 
@@ -558,11 +611,18 @@ mod tests {
 
     #[test]
     fn test_save_credentials_report() {
-        let temp_dir = std::env::temp_dir().join(format!("test_creds_{}", std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+        let temp_dir = std::env::temp_dir().join(format!(
+            "test_creds_{}",
+            std::time::SystemTime::now()
+                .duration_since(std::time::UNIX_EPOCH)
+                .unwrap()
+                .as_nanos()
+        ));
         let mut entries = BTreeMap::new();
         entries.insert("SN".to_string(), "ALCLB1234567".to_string());
         let report = "Sample Report";
-        let path = FactoryMIMExtractor::save_credentials_report(&temp_dir, &entries, report).unwrap();
+        let path =
+            FactoryMIMExtractor::save_credentials_report(&temp_dir, &entries, report).unwrap();
         assert_eq!(path.file_name().unwrap(), "info_ALCLB1234567.txt");
         assert_eq!(fs::read_to_string(&path).unwrap(), report);
         let _ = fs::remove_dir_all(&temp_dir);
@@ -605,6 +665,8 @@ mod tests {
             &BTreeMap::new(),
             Some("MyStickerPass123"),
         );
-        assert!(report.contains("MyStickerPass123 (Terverifikasi Inisialisasi Awal / Cocok dgn Factory MIM)"));
+        assert!(report.contains(
+            "MyStickerPass123 (Terverifikasi Inisialisasi Awal / Cocok dgn Factory MIM)"
+        ));
     }
 }

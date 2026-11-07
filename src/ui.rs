@@ -1,6 +1,6 @@
+use regex::Regex;
 use std::io::{self, Write};
 use std::sync::OnceLock;
-use regex::Regex;
 
 pub struct Colors;
 
